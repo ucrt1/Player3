@@ -1,7 +1,7 @@
 ﻿#pragma once
-class CPage : public Dui::CElem
+class CPage : public Dui::CElement
 {
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
 };

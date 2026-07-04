@@ -1,13 +1,13 @@
 ﻿#include "pch.h"
 #include "CWndMain.h"
 
-LRESULT CPageMain::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPageMain::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (uMsg)
 	{
 	case WM_SIZE:
 	{
-		m_Lyt.Arrange((int)GetWidthF(), (int)GetHeightF());
+		m_Lyt.Arrange(GetWidthF(), GetHeightF());
 	}
 	return 0;
 	case WM_SETFONT:
@@ -16,16 +16,16 @@ LRESULT CPageMain::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	case WM_CREATE:
 	{
-		constexpr MARGINS Mar{ .cxRightWidth = (int)CxPageIntPadding };
-		const auto pWnd = (CWndMain*)GetWnd();
+		constexpr eck::LYTMARGINS Mar{ .r = CxPageIntPadding };
+		const auto pWnd = (CWindowMain*)GetWnd();
 		m_BTOpenFile.Create(L"打开文件", Dui::DES_VISIBLE, 0,
 			0, 0, 140, 40, this, GetWnd());
-		m_BTOpenFile.SetBitmap(pWnd->RealizeImage(GImg::File));
+		m_BTOpenFile.SetBitmap(pWnd->RealizeImage(AppIcon::File));
 		m_Lyt.Add(&m_BTOpenFile, Mar, eck::LF_FIX);
 
 		m_BTOpenFolder.Create(L"打开文件夹", Dui::DES_VISIBLE, 0,
 			0, 0, 140, 40, this, GetWnd());
-		m_BTOpenFolder.SetBitmap(pWnd->RealizeImage(GImg::Folder));
+		m_BTOpenFolder.SetBitmap(pWnd->RealizeImage(AppIcon::Folder));
 		m_BTOpenFolder.SetTextFormat(GetTextFormat());
 		m_Lyt.Add(&m_BTOpenFolder, Mar, eck::LF_FIX);
 
@@ -34,9 +34,9 @@ LRESULT CPageMain::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		m_LATest.Create(nullptr, Dui::DES_VISIBLE, 0,
 			0, 0, 400, 160, this, GetWnd());
 		m_LATest.SetOnlyBitmap(TRUE);
-		m_LATest.SetBitmap(pWnd->RealizeImage(GImg::Test));
+		m_LATest.SetBitmap(pWnd->RealizeImage(AppIcon::Test));
 		//m_LATest.SetFullElem(TRUE);
-		m_LATest.SetBkImgMode(eck::BkImgMode::Center);
+		m_LATest.SetBackgroundMode(eck::BkImgMode::Center);
 		m_Lyt.Add(&m_LATest, Mar, eck::LF_FIX_WIDTH | eck::LF_FILL_HEIGHT);
 	}
 	break;

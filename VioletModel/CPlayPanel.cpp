@@ -9,12 +9,12 @@ void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
     case PlayEvt::CommTick:
     {
         const auto& Player = App->GetPlayer();
-        const auto lfCurrTime = Player.GetCurrTime();
+        const auto lfCurrTime = Player.GetCurrentTime();
         const auto lfTotalTime = Player.GetTotalTime();
         m_LATime.SetText(eck::Format(L"%02d:%02d/%02d:%02d",
             int(lfCurrTime / 60), int(lfCurrTime) % 60,
             int(lfTotalTime / 60), int(lfTotalTime) % 60).Data());
-        m_LATime.InvalidateRect();
+        m_LATime.Invalidate();
     }
     break;
     case PlayEvt::Play:
@@ -27,7 +27,7 @@ void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
     }
 }
 
-LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -63,11 +63,11 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         App->GetPlayer().GetSignal().Connect(this, &CPlayPanel::OnPlayEvent);
         m_pDC->CreateSolidColorBrush({}, &m_pBrush);
-        const auto pWnd = (CWndMain*)GetWnd();
+        const auto pWnd = (CWindowMain*)GetWnd();
 
         ComPtr<IDWriteTextFormat> pTfTitle;
-        App->GetFontFactory().NewFont(pTfTitle.RefOf(), eck::Align::Near,
-            eck::Align::Center, (float)CyFontNormal, 700);
+        App->GetFontFactory().NewFont(pTfTitle.RefOf(), eck::Alignment::Near,
+            eck::Alignment::Center, (float)CyFontNormal, 700);
         pTfTitle->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
         float x = DLeftMiniCover;

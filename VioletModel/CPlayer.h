@@ -95,7 +95,7 @@ public:
 	EckInlineNdCe CPlayList* GetList() const noexcept { return m_pPlayList; }
 	EckInlineNdCe BOOL IsActive() const noexcept { return m_bActive; }
 	// 秒
-	EckInlineNdCe double GetCurrTime() const noexcept { return m_lfCurrTime; }
+	EckInlineNdCe double GetCurrentTime() const noexcept { return m_lfCurrTime; }
 	// 秒
 	EckInlineNdCe double GetTotalTime() const noexcept { return m_lfTotalTime; }
 	EckInlineNdCe auto& GetBass() noexcept { return m_Bass; }

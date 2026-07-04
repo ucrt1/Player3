@@ -4,10 +4,10 @@
 
 void CTabPanel::OnColorSchemeChanged()
 {
-    m_LAIcon.SetBitmap(((CWndMain*)GetWnd())->RealizeImage(GImg::WindowLogo));
+    m_LAIcon.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::WindowLogo));
 }
 
-LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -20,33 +20,33 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case Dui::TBLE_GETDISPINFO:
             {
                 const auto p = (Dui::NMTBLDISPINFO*)lParam;
-                const auto pWnd = (CWndMain*)GetWnd();
+                const auto pWnd = (CWindowMain*)GetWnd();
                 switch (p->idx)
                 {
                 case 0:
                     p->pszText = L"主页";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(GImg::Home);
+                    p->pImage = pWnd->RealizeImage(AppIcon::Home);
                     break;
                 case 1:
                     p->pszText = L"列表";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(GImg::List);
+                    p->pImage = pWnd->RealizeImage(AppIcon::List);
                     break;
                 case 2:
                     p->pszText = L"效果";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(GImg::Effect);
+                    p->pImage = pWnd->RealizeImage(AppIcon::Effect);
                     break;
                 case 3:
                     p->pszText = L"设置";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(GImg::Settings);
+                    p->pImage = pWnd->RealizeImage(AppIcon::Settings);
                     break;
                 default:
                     p->pszText = L"...";
                     p->cchText = 3;
-                    p->pImage = pWnd->RealizeImage(GImg::SmallLogo);
+                    p->pImage = pWnd->RealizeImage(AppIcon::SmallLogo);
                 }
             }
             return 0;
@@ -100,7 +100,7 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
         m_LAIcon.Create(nullptr, Dui::DES_VISIBLE, 0,
             0, 0, GetWidthF(), GetWidthF(), this, GetWnd());
         m_LAIcon.SetOnlyBitmap(TRUE);
-        m_LAIcon.SetBkImgMode(eck::BkImgMode::StretchKeepAspectRatio);
+        m_LAIcon.SetBackgroundMode(eck::BkImgMode::StretchKeepAspectRatio);
         m_LAIcon.SetFullElem(TRUE);
 
         m_TAB.Create(nullptr, Dui::DES_VISIBLE, 0,

@@ -53,11 +53,11 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     m_Bass.SetSync(BASS_SYNC_END | BASS_SYNC_ONETIME | BASS_SYNC_MIXTIME, 0,
         [](DWORD, DWORD, DWORD, PVOID pUser)
         {
-            ((eck::THREADCTX*)pUser)->Callback.EnQueueCallback([]
+            ((eck::ThreadContext*)pUser)->Callback.EnQueueCallback([]
                 {
                     App->GetPlayer().m_Sig.Emit({ PlayEvt::End });
                 });
-        }, eck::GetThreadCtx());
+        }, eck::PtcCurrent());
     m_MusicInfo.uMask = Tag::MIM_ALL;
     Tag::SIMPLE_OPT Opt{};
     Opt.svArtistDiv = {};
@@ -85,7 +85,7 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     {
     UseDefCover:
         m_bDefCover = TRUE;
-        m_pBmpCover = App->GetImg(GImg::DefaultCover);
+        m_pBmpCover = App->GetImg(AppIcon::DefaultCover);
         m_pBmpCover->AddRef();
     }
 
@@ -93,7 +93,7 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     m_pLrc = new Lyric::CLyric{};
 
     auto rsLrcPath{ e.rsFile };
-    rsLrcPath.PazRenameExtension(EckStrAndLen(L".lrc"));
+    rsLrcPath.PazRenameExtension(EckArgString(L".lrc"));
     m_pLrc->MgAddDividerString(L" / "sv, {});
     m_pLrc->MgAddDividerString(L" 「"sv, L"」"sv);
     m_pLrc->MgSetDuration((float)m_lfTotalTime);

@@ -1,10 +1,10 @@
 ﻿#pragma once
-class CVeCover : public Dui::CElem
+class CVeCover : public Dui::CElement
 {
 private:
 	ID2D1Bitmap1* m_pBmp{};
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
 	void SetBitmap(ID2D1Bitmap1* pBmp)
 	{ 

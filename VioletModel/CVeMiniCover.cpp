@@ -11,17 +11,17 @@ void CVeMiniCover::OnColorSchemeChanged(BOOL bForceUpdateCover)
 	{
 		if (m_pBmp)
 			m_pBmp->Release();
-		m_pBmp = ((CWndMain*)GetWnd())->RealizeImage(GImg::DefaultCover);
+		m_pBmp = ((CWindowMain*)GetWnd())->RealizeImage(AppIcon::DefaultCover);
 		m_pBmp->AddRef();
 	}
 
 	if (m_pBmpCoverUp)
 		m_pBmpCoverUp->Release();
-	m_pBmpCoverUp = ((CWndMain*)GetWnd())->RealizeImage(GImg::PlayPageUp);
+	m_pBmpCoverUp = ((CWindowMain*)GetWnd())->RealizeImage(AppIcon::PlayPageUp);
 	m_pBmpCoverUp->AddRef();
 }
 
-LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (uMsg)
 	{
@@ -32,7 +32,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		float fValue;
 		if (m_pec->IsActive())
 		{
-			fValue = m_pec->GetCurrValue();
+			fValue = m_pec->GetCurrentValue();
 		BlurDC:
 			auto rcView{ GetViewRectF() };
 			eck::InflateRect(rcView, fValue, fValue);
@@ -72,7 +72,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			m_bHover = TRUE;
 			m_pec->Begin(0.f, CoverAnEndValue);
-			GetWnd()->WakeRenderThread();
+			GetWnd()->KctWake();
 		}
 	}
 	return 0;
@@ -82,7 +82,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 			m_bHover = FALSE;
 			m_pec->Begin(CoverAnEndValue, 0.f);
-			GetWnd()->WakeRenderThread();
+			GetWnd()->KctWake();
 		}
 	}
 	return 0;
@@ -117,12 +117,12 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		m_pec = new eck::CEasingCurve{};
 		InitEasingCurve(m_pec);
-		m_pec->SetAnProc(eck::Easing::OutCubic);
+		m_pec->SetProcedure(eck::Easing::OutCubic);
 		m_pec->SetDuration(200.f);
-		m_pec->SetCallBack([](float fCurrValue, float fOldValue, LPARAM lParam)
+		m_pec->SetCallback([](float fCurrValue, float fOldValue, LPARAM lParam)
 			{
 				const auto p = (CVeMiniCover*)lParam;
-				p->InvalidateRect();
+				p->Invalidate();
 			});
 		OnColorSchemeChanged(TRUE);
 	}

@@ -2,7 +2,7 @@
 #include "CPlayer.h"
 #include "CPlayListMgr.h"
 
-enum class GImg
+enum class AppIcon
 {
     About,
     Add,
@@ -173,26 +173,26 @@ enum
 
 enum
 {
-    ELEN_PLACEHOLDER = Dui::EE_PRIVATE_BEGIN,
+    ELEN_PLACEHOLDER = Dui::ENC_PRIVATE_BEGIN,
     ELEN_PAGE_CHANGE,		// [CTabPanel]边栏被单击时(NMLTITEMINDEX*)
     ELEN_MINICOVER_CLICK,	// [CMiniCover]封面被单击时
     ELEN_DTLRC_GET_TIME,	// [CVeDtLrc]取当前播放器时间(NM_DTL_GET_TIME*)
     ELEN_PLAYPAGE_LBTN_UP,	// [CPagePlaying]左键弹起
 };
 
-class CWndMain;
+class CWindowMain;
 class CApp
 {
 private:
-    IWICBitmap* m_Img[(size_t)GImg::Max]{};
+    IWICBitmapSource* m_Img[(size_t)AppIcon::Max]{};
     BOOL m_bDarkMode{};
     CPlayer m_Player{};
     CPlayListMgr m_ListMgr{};
     eck::CDWriteFontFactory m_FontFactory{};
-    eck::THREADCTX* m_ptcUiThread{};
-    CWndMain* m_pWndMain{};
+    eck::ThreadContext* m_ptcUiThread{};
+    CWindowMain* m_pWndMain{};
 
-    IWICBitmap* InvertSkin(IWICBitmap* pBmp);
+    IWICBitmapSource* InvertSkin(IWICBitmapSource* pBmp);
 
     void LoadSkin(BOOL bLoadAll);
 public:
@@ -204,7 +204,7 @@ public:
 
     const D2D1_COLOR_F& GetColor(GPal n) const;
 
-    EckInlineNdCe IWICBitmap* GetImg(GImg n) const { return m_Img[size_t(n)]; }
+    EckInlineNdCe IWICBitmapSource* GetImg(AppIcon n) const { return m_Img[size_t(n)]; }
 
     void SetDarkMode(BOOL bDarkMode);
 
@@ -213,9 +213,9 @@ public:
     EckInlineNdCe auto& GetFontFactory() { return m_FontFactory; }
     EckInlineNdCe auto& GetMainWindow() { return *m_pWndMain; }
 
-    EckInlineNdCe auto UiThreadCtx() const { return m_ptcUiThread; }
+    EckInlineNdCe auto UiThreadContext() const { return m_ptcUiThread; }
 
-    EckInlineCe void SetMainWindow(CWndMain* pWnd) { m_pWndMain = pWnd; }
+    EckInlineCe void SetMainWindow(CWindowMain* pWnd) { m_pWndMain = pWnd; }
 };
 
 extern CApp* App;

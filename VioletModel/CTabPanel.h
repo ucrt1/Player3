@@ -1,5 +1,5 @@
 ﻿#pragma once
-class CTabPanel : public Dui::CElem
+class CTabPanel : public Dui::CElement
 {
 private:
 	ID2D1SolidColorBrush* m_pBrush{};
@@ -8,7 +8,7 @@ private:
 
 	void OnColorSchemeChanged();
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
 	EckInlineNdCe auto& GetTabList() { return m_TAB; }
 };

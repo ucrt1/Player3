@@ -1,5 +1,5 @@
 ﻿#pragma once
-class CVeVolumeBar : public Dui::CElem
+class CVeVolumeBar : public Dui::CElement
 {
 private:
     Dui::CLabel m_LAVol{};
@@ -11,7 +11,7 @@ private:
 
     BOOL m_bShow{};
 public:
-    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
     void ShowAnimation();
 

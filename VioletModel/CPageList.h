@@ -58,5 +58,5 @@ private:
 
     HRESULT OnMenuAddFile(CPlayList* pList, int idxInsert = -1);
 public:
-    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 };

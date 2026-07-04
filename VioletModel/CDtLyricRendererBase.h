@@ -40,7 +40,7 @@ protected:
     BOOLEAN m_bAutoWrap{};			// 自动换行
     BOOLEAN m_bShowTrans{ TRUE };	// 显示翻译
     BOOLEAN m_bShadow{ TRUE };		// 显示阴影
-    eck::Align m_eAlign[2]{ eck::Align::Near,eck::Align::Far };
+    eck::Alignment m_eAlign[2]{ eck::Alignment::Near,eck::Alignment::Far };
 public:
     void SetTextFormatMain(IDWriteTextFormat* pTf) { m_pTfMain = pTf; }
     void SetTextFormatTrans(IDWriteTextFormat* pTf) { m_pTfTrans = pTf; }

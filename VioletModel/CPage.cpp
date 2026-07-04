@@ -1,7 +1,7 @@
 ﻿#include "pch.h"
 #include "CPage.h"
 
-LRESULT CPage::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPage::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (uMsg)
 	{

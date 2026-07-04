@@ -53,17 +53,17 @@ void CPlayListFileReader::Load(CPlayList* pList)
             e.s = pItem->s;
             e.s.bCoverUpdated = FALSE;
 
-            e.rsName.DupString((PCWSTR)r.Data(), pItem->cchName);
+            e.rsName.Assign((PCWSTR)r.Data(), pItem->cchName);
             r += eck::Cch2CbW(pItem->cchName);
-            e.rsFile.DupString((PCWSTR)r.Data(), pItem->cchFile);
+            e.rsFile.Assign((PCWSTR)r.Data(), pItem->cchFile);
             r += eck::Cch2CbW(pItem->cchFile);
-            e.rsTitle.DupString((PCWSTR)r.Data(), pItem->cchTitle);
+            e.rsTitle.Assign((PCWSTR)r.Data(), pItem->cchTitle);
             r += eck::Cch2CbW(pItem->cchTitle);
-            e.rsArtist.DupString((PCWSTR)r.Data(), pItem->cchArtist);
+            e.rsArtist.Assign((PCWSTR)r.Data(), pItem->cchArtist);
             r += eck::Cch2CbW(pItem->cchArtist);
-            e.rsAlbum.DupString((PCWSTR)r.Data(), pItem->cchAlbum);
+            e.rsAlbum.Assign((PCWSTR)r.Data(), pItem->cchAlbum);
             r += eck::Cch2CbW(pItem->cchAlbum);
-            e.rsGenre.DupString((PCWSTR)r.Data(), pItem->cchGenre);
+            e.rsGenre.Assign((PCWSTR)r.Data(), pItem->cchGenre);
             r += eck::Cch2CbW(pItem->cchGenre);
         }
     }
@@ -85,17 +85,17 @@ void CPlayListFileReader::Load(CPlayList* pList)
             e.s.bCoverUpdated = FALSE;
             e.s.bUpdated = TRUE;
 
-            e.rsName.DupString((PCWSTR)r.Data(), pItem->cchName);
+            e.rsName.Assign((PCWSTR)r.Data(), pItem->cchName);
             r += eck::Cch2CbW(pItem->cchName);
-            e.rsFile.DupString((PCWSTR)r.Data(), pItem->cchFile);
+            e.rsFile.Assign((PCWSTR)r.Data(), pItem->cchFile);
             r += eck::Cch2CbW(pItem->cchFile);
-            e.rsTitle.DupString((PCWSTR)r.Data(), pItem->cchTitle);
+            e.rsTitle.Assign((PCWSTR)r.Data(), pItem->cchTitle);
             r += eck::Cch2CbW(pItem->cchTitle);
-            e.rsArtist.DupString((PCWSTR)r.Data(), pItem->cchArtist);
+            e.rsArtist.Assign((PCWSTR)r.Data(), pItem->cchArtist);
             r += eck::Cch2CbW(pItem->cchArtist);
-            e.rsAlbum.DupString((PCWSTR)r.Data(), pItem->cchAlbum);
+            e.rsAlbum.Assign((PCWSTR)r.Data(), pItem->cchAlbum);
             r += eck::Cch2CbW(pItem->cchAlbum);
-            e.rsGenre.DupString((PCWSTR)r.Data(), pItem->cchGenre);
+            e.rsGenre.Assign((PCWSTR)r.Data(), pItem->cchGenre);
             r += eck::Cch2CbW(pItem->cchGenre);
         }
     }
@@ -115,12 +115,12 @@ void CPlayListFileReader::Load(CPlayList* pList)
 
             auto pText = (PCWSTR)r.Data();
             auto cchText = (int)wcslen(pText);
-            e.rsName.DupString(pText, cchText);
+            e.rsName.Assign(pText, cchText);
             r += eck::Cch2CbW(cchText);
 
             pText = (PCWSTR)r.Data();
             cchText = (int)wcslen(pText);
-            e.rsFile.DupString(pText, cchText);
+            e.rsFile.Assign(pText, cchText);
             r += eck::Cch2CbW(cchText);
 
             if (eck::IsBitSet(pItem->uFlags, QKLIF_BOOKMARK))

@@ -26,7 +26,7 @@ void CLrGeometryRealization::ReCreateFadeBrush()
         { 1.f },
     };
     ComPtr<ID2D1GradientStopCollection> pStopCollection;
-    m_pDC->CreateGradientStopCollection(EckArrAndLen(Stop), &pStopCollection);
+    m_pDC->CreateGradientStopCollection(EckArgArray(Stop), &pStopCollection);
     D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES Prop;
     Prop.startPoint = {};
     Prop.endPoint = { 0.f,m_cyView };
@@ -111,10 +111,10 @@ void CLrGeometryRealization::LrItmDraw(const LRD_DRAW& Opt)
     ptScale.y = Opt.cy / 2.f - m_cxyLineMargin;
     switch (Opt.eAlignH)
     {
-    case eck::Align::Center:
+    case eck::Alignment::Center:
         ptScale.x = m_cxView / 2.f;
         break;
-    case eck::Align::Far:
+    case eck::Alignment::Far:
         ptScale.x = m_cxView;
         break;
     }
@@ -133,11 +133,11 @@ void CLrGeometryRealization::LrItmDraw(const LRD_DRAW& Opt)
         float x[2]{};
         switch (Opt.eAlignH)
         {
-        case eck::Align::Center:
+        case eck::Alignment::Center:
             x[0] = (m_cxView - m_cxView / Opt.fScale) / 2.f;
             x[1] = (m_cxView - Item.cxTrans) / 2.f;
             break;
-        case eck::Align::Far:
+        case eck::Alignment::Far:
             x[0] = (m_cxView - m_cxView / Opt.fScale);
             x[1] = (m_cxView - Item.cxTrans);
             break;

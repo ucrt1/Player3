@@ -2,7 +2,7 @@
 #include "CVeCover.h"
 
 
-LRESULT CVeCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CVeCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {

@@ -2,7 +2,7 @@
 #include "CVeVolumeBar.h"
 #include "CApp.h"
 
-LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -25,15 +25,15 @@ LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         InitEasingCurve(&m_ecShowing);
         m_ecShowing.SetDuration(300);
-        m_ecShowing.SetAnProc(eck::Easing::OutCubic);
-        m_ecShowing.SetCallBack([](float fCurrValue, float fOldValue, LPARAM lParam)
+        m_ecShowing.SetProcedure(eck::Easing::OutCubic);
+        m_ecShowing.SetCallback([](float fCurrValue, float fOldValue, LPARAM lParam)
             {
                 const auto p = (CVeVolumeBar*)lParam;
                 p->m_PageAn.Opacity = fCurrValue;
                 p->m_PageAn.Dy = (1.f - fCurrValue) * (float)DVolAn;
                   const D2D1_RECT_F rcOld = p->GetWholeRectInClient();
                 p->CompReCalcCompositedRect();
-                p->InvalidateRect(FALSE);
+                p->Invalidate(FALSE);
                 p->GetWnd()->IrUnion(rcOld);
                 if (p->m_ecShowing.IsStop())
                 {
@@ -78,7 +78,7 @@ void CVeVolumeBar::ShowAnimation()
         m_ecShowing.Begin(0.f, 1.f);
     else
         m_ecShowing.Begin(1.f, 0.f);
-    GetWnd()->WakeRenderThread();
+    GetWnd()->KctWake();
 }
 
 void CVeVolumeBar::OnVolumeChanged(float fVol)
@@ -86,5 +86,5 @@ void CVeVolumeBar::OnVolumeChanged(float fVol)
     WCHAR szVol[eck::CchI32ToStrBufNoRadix2];
     swprintf(szVol, L"%d", int(fVol));
     m_LAVol.SetText(szVol);
-    m_LAVol.InvalidateRect();
+    m_LAVol.Invalidate();
 }

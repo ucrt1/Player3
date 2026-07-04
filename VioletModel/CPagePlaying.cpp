@@ -14,7 +14,7 @@ void CPagePlaying::UpdateBlurredCover()
 	ComPtr<IWICBitmap> pWicCover;
 	App->GetPlayer().GetCover(pWicCover.RefOf());
 	if (!pWicCover.Get())
-		pWicCover = App->GetImg(GImg::DefaultCover);
+		pWicCover = App->GetImg(AppIcon::DefaultCover);
 	ComPtr<ID2D1Image> pOldTarget;
 	m_pDC->GetTarget(&pOldTarget);
 	m_pDC->SetTarget(m_pBmpBlurredCover);
@@ -80,7 +80,7 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
 	case PlayEvt::Play:
 	{
 		UpdateBlurredCover();
-		InvalidateRect();
+		Invalidate();
 		const auto& mi = App->GetPlayer().GetMusicInfo();
 		m_LATitle.SetText(mi.rsTitle.Data());
 		m_LAAlbum.SetText(mi.rsAlbum.Data());
@@ -120,7 +120,7 @@ void CPagePlaying::OnColorSchemeChanged()
 	m_LAArtist.SetColor(crText);
 	m_LAArtist.UpdateFadeColor();
 
-	m_BTBack.SetBitmap(((CWndMain*)GetWnd())->RealizeImage(GImg::PlayPageDown));
+	m_BTBack.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::PlayPageDown));
 
 	const D2D1_COLOR_F crLrc[CVeLrc::CriMax]
 	{
@@ -130,7 +130,7 @@ void CPagePlaying::OnColorSchemeChanged()
 	m_Lrc.LrcSetColor(crLrc);
 }
 
-LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (uMsg)
 	{
@@ -218,12 +218,12 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		OnColorSchemeChanged();
 		UpdateBlurredCover();
-		InvalidateRect();
+		Invalidate();
 	}
 	break;
 	case WM_LBUTTONUP:
 	{
-		if (((CWndMain*)GetWnd())->TlIsValid())
+		if (((CWindowMain*)GetWnd())->TlIsValid())
 		{
 			Dui::DUINMHDR nm{ ELEN_PLAYPAGE_LBTN_UP };
             GenElemNotify(&nm);
@@ -257,19 +257,19 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		m_BTBack.Create(nullptr, Dui::DES_VISIBLE | Dui::DES_NOTIFY_TO_WND, 0,
 			100, 100, 70, 20, this);
 		m_BTBack.SetID(ELEID_PLAYPAGE_BACK);
-		m_BTBack.SetTheme(((CWndMain*)GetWnd())->GetVioletTheme());
+		m_BTBack.SetTheme(((CWindowMain*)GetWnd())->GetVioletTheme());
 
 		OnColorSchemeChanged();
 
 		ComPtr<IDWriteTextFormat> pTfLrc;
 		auto& FontFactory = App->GetFontFactory();;
 		FontFactory.NewFont(pTfLrc.RefOfClear(),
-			eck::Align::Near, eck::Align::Near, 25, 700);
+			eck::Alignment::Near, eck::Alignment::Near, 25, 700);
 		m_Lrc.SetTextFormat(pTfLrc.Get());
 		FontFactory.NewFont(pTfLrc.RefOfClear(),
-			eck::Align::Near, eck::Align::Near, 21, 500);
+			eck::Alignment::Near, eck::Alignment::Near, 21, 500);
 		m_Lrc.SetTextFormatTrans(pTfLrc.Get());
-		m_Lrc.GetScrollBar().SetTheme(((CWndMain*)GetWnd())->GetVioletTheme());
+		m_Lrc.GetScrollBar().SetTheme(((CWindowMain*)GetWnd())->GetVioletTheme());
 		
 		SetEmptyText();
 

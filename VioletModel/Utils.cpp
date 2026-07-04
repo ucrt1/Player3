@@ -1,8 +1,10 @@
 ﻿#include "pch.h"
 #include "Utils.h"
 
-Tag::Result VltGetMusicInfo(PCWSTR pszFile,
-    Tag::MUSICINFO& mi, const Tag::SIMPLE_OPT& Opt)
+Tag::Result VltGetMusicInfo(
+    _In_z_ PCWSTR pszFile,
+    Tag::SimpleData& mi,
+    const Tag::SIMPLE_OPT& Opt)
 {
     Tag::CMediaFile mf{ pszFile };
     if (!mf.IsValid())
@@ -31,11 +33,11 @@ Tag::Result VltGetMusicInfo(PCWSTR pszFile,
         mi.uMask &= ~mi.uMaskChecked;
     }
     if ((uMask & Tag::MIM_TITLE) && mi.rsTitle.IsEmpty())
-        mi.rsTitle.DupString(EckStrAndLen(L"未知标题"));
-    if ((uMask & Tag::MIM_ARTIST) && mi.slArtist.Str.IsEmpty())
+        mi.rsTitle.Assign(L"未知标题"sv);
+    if ((uMask & Tag::MIM_ARTIST) && mi.slArtist.String.IsEmpty())
         mi.slArtist.PushBackString(L"未知艺术家"sv, {});
     if ((uMask & Tag::MIM_ALBUM) && mi.rsAlbum.IsEmpty())
-        mi.rsAlbum.DupString(EckStrAndLen(L"未知专辑"));
+        mi.rsAlbum.Assign(L"未知专辑"sv);
     mi.uMask = uMask;
     return Tag::Result::Ok;
 }

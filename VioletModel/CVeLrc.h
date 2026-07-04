@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "CLyricRendererBase.h"
 
-class CVeLrc : public Dui::CElem, public eck::CFixedTimeLine
+class CVeLrc : public Dui::CElement, public eck::CFixedTimeLine
 {
     // Isb = Item Select Background
     // Mi = Mouse Idle
@@ -71,7 +71,7 @@ private:
     float m_yMinMaxDelayPos{};
     float m_msItemAnDelay{ 200.f };		// 当前行发生更改时歌词行之间开始动画的延迟
     float m_cyLinePadding{ 10.f };		// 项目间距
-    eck::Align m_eAlignH{ eck::Align::Near };	// 水平对齐
+    eck::Alignment m_eAlignH{ eck::Alignment::Near };	// 水平对齐
 
     BOOLEAN m_bAnSelBkg{};		// 正在运行项目热点背景动画
     BOOLEAN m_bEnlarging{};		// 正在放大当前歌词行
@@ -105,7 +105,7 @@ private:
         if (!m_bAnSelBkg)
         {
             m_bAnSelBkg = TRUE;
-            GetWnd()->WakeRenderThread();
+            GetWnd()->KctWake();
         }
     }
 
@@ -125,7 +125,7 @@ private:
 
     BOOL ItmIsDelayEnd(const ITEM& e);
 public:
-    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
     // 仅在创建控件前调用一次
     void LrcSetRenderer(CLyricRendererBase* pRenderer)
@@ -148,8 +148,8 @@ public:
 
     int ItmHitTest(POINT pt);
 
-    void TlTick(int iMs) override;
-    BOOL TlIsValid() override { return m_bAnSelBkg || m_bItemAnDelay; }
+    void TlTick(int iMs) noexcept override;
+    BOOL TlIsValid() noexcept override { return m_bAnSelBkg || m_bItemAnDelay; }
 
     EckInlineNdCe BOOL IsEmpty() const { return m_vItem.empty(); }
 

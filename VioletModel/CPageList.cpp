@@ -41,8 +41,8 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
             e.s.bCoverUpdated = TRUE;
         }
     }
-    auto ptc = eck::GetThreadCtx();
-    EckAssert(eck::GetThreadCtx() == App->UiThreadCtx());
+    auto ptc = eck::PtcCurrent();
+    EckAssert(eck::PtcCurrent() == App->UiThreadContext());
 
     co_await eck::CoroResumeBackground();
     Tag::SIMPLE_OPT Opt{};
@@ -78,7 +78,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
             ComPtr<IStream> pStream;
             pCover->CreateStream(pStream.RefOf());
             eck::CreateWicBitmap(f.pWicBitmap.RefOf(), pStream.Get(),
-                m_cxIl, m_cyIl, eck::DefWicPixelFormat,
+                m_cxIl, m_cyIl, eck::DefaultWicPixelFormat,
                 WICBitmapInterpolationModeHighQualityCubic);
             if (f.pWicBitmap.Get())
             {
@@ -127,7 +127,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
 void CPageList::PlMdBeginLoad(int idxBegin, int idxEnd, int idxList)
 {
     if (idxList < 0)
-        idxList = m_TBLPlayList.GetCurrSel();
+        idxList = m_TBLPlayList.GetCurrentSelection();
     if (idxList < 0)
         return;
     const auto& e = App->GetListMgr().At(idxList);
@@ -161,14 +161,14 @@ void CPageList::PlMdCheckVisibleItem(int idxList)
 
 CPlayList* CPageList::PlCurrent()
 {
-    const auto idx = m_TBLPlayList.GetCurrSel();
+    const auto idx = m_TBLPlayList.GetCurrentSelection();
     if (idx < 0)
         return nullptr;
     return App->GetListMgr().AtList(idx).get();
 }
 std::shared_ptr<CPlayList> CPageList::PlCurrentShared()
 {
-    const auto idx = m_TBLPlayList.GetCurrSel();
+    const auto idx = m_TBLPlayList.GetCurrentSelection();
     if (idx < 0)
         return {};
     return App->GetListMgr().AtList(idx);
@@ -206,7 +206,7 @@ void CPageList::IlUpdateDefaultCover()
 {
     SafeRelease(m_pBmpDefCover);
     ComPtr<IWICBitmap> pDefCover;
-    eck::ScaleWicBitmap(App->GetImg(GImg::DefaultCover), pDefCover.RefOf(),
+    eck::ScaleWicBitmap(App->GetImg(AppIcon::DefaultCover), pDefCover.RefOf(),
         m_cxIl, m_cyIl, WICBitmapInterpolationModeHighQualityCubic);
     D2D1_BITMAP_PROPERTIES1 BmpProp{};
     BmpProp.pixelFormat = D2D1_PIXEL_FORMAT(
@@ -243,9 +243,9 @@ HRESULT CPageList::OnMenuAddFile(CPlayList* pList, int idxInsert)
     };
     pfod->SetFileTypes(ARRAYSIZE(FilterSpec), FilterSpec);
 
-    eck::GetThreadCtx()->bEnableDarkModeHook = FALSE;
-    pfod->Show(GetWnd()->HWnd);
-    eck::GetThreadCtx()->bEnableDarkModeHook = TRUE;
+    eck::PtcCurrent()->bEnableDarkModeHook = FALSE;
+    pfod->Show(GetWnd()->Handle);
+    eck::PtcCurrent()->bEnableDarkModeHook = TRUE;
     ComPtr<IShellItemArray> psia;
     hr = pfod->GetResults(&psia);
     if (FAILED(hr))
@@ -275,7 +275,7 @@ HRESULT CPageList::OnMenuAddFile(CPlayList* pList, int idxInsert)
     return S_OK;
 }
 
-LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -294,7 +294,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     p->cchText = rsName.CopyTo((PWSTR)p->pszText, p->cchText);
                 }
                 if (p->uMask & eck::DIM_IMAGE)
-                    p->pImage = ((CWndMain*)GetWnd())->RealizeImage(GImg::List);
+                    p->pImage = ((CWindowMain*)GetWnd())->RealizeImage(AppIcon::List);
             }
             return 0;
             case Dui::TBLE_SELCHANGED:
@@ -314,7 +314,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     cItem = PlSearchEditContent(e.pList.get());
                 m_GLList.SetItemCount(cItem);
                 m_GLList.ReCalc();
-                m_GLList.InvalidateRect();
+                m_GLList.Invalidate();
                 PlMdCheckVisibleItem(p->idx);
             }
             return 0;
@@ -374,8 +374,8 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case Dui::LTE_SCROLLED:
             {
                 const auto p = (Dui::NMLTSCROLLED*)lParam;
-                if (eck::GetThreadCtx() != App->UiThreadCtx())
-                    App->UiThreadCtx()->Callback.EnQueueCallback(
+                if (eck::PtcCurrent() != App->UiThreadContext())
+                    App->UiThreadContext()->Callback.EnQueueCallback(
                         [this, idx0 = p->idxBegin, idx1 = p->idxEnd]
                         {
                             PlMdBeginLoad(idx0, idx1);
@@ -396,7 +396,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 OnMenuAddFile(pList, -1);
                 m_GLList.SetItemCount(pList->FlGetCount());
                 m_GLList.ReCalc();
-                m_GLList.InvalidateRect();
+                m_GLList.Invalidate();
                 PlMdCheckVisibleItem(-1);
             }
             return 0;
@@ -427,7 +427,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 m_GLList.SetItemCount(PlSearchEditContent(pList));
                 m_GLList.InvalidateCache();
                 m_GLList.ReCalc();
-                m_GLList.InvalidateRect();
+                m_GLList.Invalidate();
                 PlMdCheckVisibleItem(-1);
             }
             return 0;
@@ -436,7 +436,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return 0;
 
     case WM_SIZE:
-        m_Lyt.Arrange((int)GetWidthF(), (int)GetHeightF());
+        m_Lyt.Arrange(GetWidthF(), GetHeightF());
         PlMdCheckVisibleItem(-1);
         break;
 
@@ -451,7 +451,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case Dui::EWM_COLORSCHEMECHANGED:
     {
         IlUpdateDefaultCover();
-        const auto idx = m_TBLPlayList.GetCurrSel();
+        const auto idx = m_TBLPlayList.GetCurrentSelection();
         if (idx < 0)
             break;
         auto& Lm = App->GetListMgr();
@@ -470,52 +470,55 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
         m_cyIl = m_cxIl;
         IlUpdateDefaultCover();
         {
-            m_EDSearch.TxSetProp(TXTBIT_MULTILINE, 0, FALSE);
+            m_EDSearch.TxSetProperty(TXTBIT_MULTILINE, 0, FALSE);
             m_EDSearch.Create(nullptr, Dui::DES_VISIBLE, 0,
                 0, 0, 0, CyStdEdit, this);
-            m_LytPlayList.Add(&m_EDSearch, { .cyBottomHeight = (int)CxPageIntPadding }, eck::LF_FIX_HEIGHT | eck::LF_FILL_WIDTH);
+            m_LytPlayList.Add(&m_EDSearch, { .b = CxPageIntPadding },
+                eck::LF_FIX_HEIGHT);
 
             m_TBLPlayList.Create(nullptr, Dui::DES_VISIBLE, 0,
                 0, 0, CxListFileList, 0, this, GetWnd());
             m_TBLPlayList.SetItemCount(App->GetListMgr().GetCount());
             m_TBLPlayList.SetBottomExtraSpace(CyPlayPanel);
             m_TBLPlayList.ReCalc();
-            m_LytPlayList.Add(&m_TBLPlayList, {}, eck::LF_FILL, 1);
+            m_LytPlayList.Add(&m_TBLPlayList, {}, 0, 1);
+            m_LytPlayList.LoSetSize({ CxListFileList, 0 });
         }
-        m_Lyt.Add(&m_LytPlayList, { .cxRightWidth = (int)CxPageIntPadding },
-            eck::LF_FIX_WIDTH | eck::LF_FILL_HEIGHT);
+        m_Lyt.Add(&m_LytPlayList, { .r = CxPageIntPadding },
+            eck::LF_FIX_WIDTH);
 
         {
             ComPtr<IDWriteTextFormat> pTextFormat;
-            App->GetFontFactory().NewFont(pTextFormat.RefOfClear(), eck::Align::Center,
-                eck::Align::Center, (float)CyFontNormal, 400);
+            App->GetFontFactory().NewFont(pTextFormat.RefOfClear(), eck::Alignment::Center,
+                eck::Alignment::Center, (float)CyFontNormal, 400);
             pTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
             m_BTAddFile.Create(L"添加文件", Dui::DES_VISIBLE, 0,
                 0, 0, CxListPageButton, CyStdEdit, this);
             m_BTAddFile.SetTextFormat(pTextFormat.Get());
-            m_BTAddFile.SetBitmap(((CWndMain*)GetWnd())->RealizeImage(GImg::Add));
+            m_BTAddFile.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::Add));
             m_LytTopBar.Add(&m_BTAddFile, {}, eck::LF_FIX);
 
             m_BTLocate.Create(L"定位当前", Dui::DES_VISIBLE, 0,
                 0, 0, CxListPageButton, CyStdEdit, this);
             m_BTLocate.SetTextFormat(pTextFormat.Get());
-            m_BTLocate.SetBitmap(((CWndMain*)GetWnd())->RealizeImage(GImg::Locate));
-            m_LytTopBar.Add(&m_BTLocate, { .cxLeftWidth = (int)CxPageIntPadding }, eck::LF_FIX);
+            m_BTLocate.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::Locate));
+            m_LytTopBar.Add(&m_BTLocate, { .l = CxPageIntPadding }, eck::LF_FIX);
 
             m_LytTopBar.Add(&m_TopBarDummySpace, {}, eck::LF_FILL, 1);
 
-            m_EDSearchItem.TxSetProp(TXTBIT_MULTILINE, 0, FALSE);
+            m_EDSearchItem.TxSetProperty(TXTBIT_MULTILINE, 0, FALSE);
             m_EDSearchItem.Create(nullptr, Dui::DES_VISIBLE, 0,
                 0, 0, 200, CyStdEdit, this);
             m_EDSearchItem.SetEventMask(ENM_CHANGE);
-            m_LytTopBar.Add(&m_EDSearchItem, {}, eck::LF_FIX | eck::LF_ALIGN_FAR);
+            m_LytTopBar.Add(&m_EDSearchItem, {}, eck::LF_FIX);
+            m_LytTopBar.LoSetSize({ 0, CyStdEdit });
 
-            m_LytList.Add(&m_LytTopBar, { .cyBottomHeight = (int)CxPageIntPadding },
-                eck::LF_FIX_HEIGHT | eck::LF_FILL_WIDTH);
+            m_LytList.Add(&m_LytTopBar, { .b = CxPageIntPadding },
+                eck::LF_FIX_HEIGHT);
 
-            App->GetFontFactory().NewFont(pTextFormat.RefOfClear(), eck::Align::Near,
-                eck::Align::Center, (float)CyFontNormal, 400, TRUE);
+            App->GetFontFactory().NewFont(pTextFormat.RefOfClear(), eck::Alignment::Near,
+                eck::Alignment::Center, (float)CyFontNormal, 400, TRUE);
             pTextFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
             m_GLList.Create(nullptr, Dui::DES_VISIBLE, 0,
@@ -532,7 +535,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
             m_GLList.SetDbgIndex(TRUE);
             m_LytList.Add(&m_GLList, {}, eck::LF_FILL, 1);
         }
-        m_Lyt.Add(&m_LytList, { .cxRightWidth = (int)CxPageIntPadding }, eck::LF_FILL, 1);
+        m_Lyt.Add(&m_LytList, { .r = CxPageIntPadding }, 0, 1);
 
         m_GLList.GetSignal().Connect(
             [&](UINT uMsg, WPARAM wParam, LPARAM lParam, eck::SlotCtx& Ctx)
@@ -568,17 +571,17 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
         m_cxIl = (int)Log2PhyF(CxyListCover);
         m_cyIl = m_cxIl;
         IlUpdateDefaultCover();
-        ((CWndMain*)GetWnd())->ThreadCtx()->Callback.EnQueueCallback([this]
+        ((CWindowMain*)GetWnd())->ThreadCtx()->Callback.EnQueueCallback([this]
             {
                 ECK_DUILOCK;
                 App->GetListMgr().InvalidateImageList();
-                const auto idx = m_TBLPlayList.GetCurrSel();
+                const auto idx = m_TBLPlayList.GetCurrentSelection();
                 if (idx < 0)
                     return;
                 IlReCreate(idx, TRUE);
                 const auto& e = App->GetListMgr().At(idx);
                 m_GLList.SetImageList(e.pImageList.Get());
-                m_GLList.InvalidateRect();
+                m_GLList.Invalidate();
                 PlMdCheckVisibleItem(-1);
             });
     }

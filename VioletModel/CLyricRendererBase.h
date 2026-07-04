@@ -14,7 +14,7 @@ struct LRD_DRAW
     int idx;
 
     BYTE uFlags;			// LRIF_*
-    eck::Align eAlignH;
+    eck::Alignment eAlignH;
     Dui::State eState;      // 背景状态，设为State::None表示不绘制背景
 
     float x;

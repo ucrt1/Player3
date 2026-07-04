@@ -4,50 +4,34 @@
 
 const static UINT MsgTaskbarButtonCreated{ RegisterWindowMessageW(L"TaskbarButtonCreated") };
 
-EckInlineNdCe GImg AutoNextModeToGImg(AutoNextMode eMode) noexcept
+EckInlineNdCe AppIcon AutoNextModeToGImg(AutoNextMode eMode) noexcept
 {
     switch (eMode)
     {
-    case AutoNextMode::ListLoop: return GImg::Circle;
-    case AutoNextMode::List: return GImg::ArrowRight3;
-    case AutoNextMode::Radom: return GImg::ArrowCross;
-    case AutoNextMode::SingleLoop: return GImg::CircleOne;
-    case AutoNextMode::Single: return GImg::ArrowRight1;
+    case AutoNextMode::ListLoop: return AppIcon::Circle;
+    case AutoNextMode::List: return AppIcon::ArrowRight3;
+    case AutoNextMode::Radom: return AppIcon::ArrowCross;
+    case AutoNextMode::SingleLoop: return AppIcon::CircleOne;
+    case AutoNextMode::Single: return AppIcon::ArrowRight1;
     }
     ECK_UNREACHABLE;
 }
 
-void CWndMain::ClearRes()
+void CWindowMain::ClearRes()
 {
     for (auto& e : m_vBmpRealization)
         SafeRelease(e);
-    SafeRelease(m_pecPage);
     SafeRelease(m_pBmpCover);
-    SafeRelease(m_pBrush);
-    SafeRelease(m_pCompPlayPageAn);
-    SafeRelease(m_pCompNormalPageAn);
-    SafeRelease(m_pVioletTheme);
 }
 
-BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
+BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
 {
-    BbrDelete();
-
-    StRegisterAutoTheme(m_pVioletTheme);
-    StSwitchStdThemeMode(ShouldAppsUseDarkMode());
     App->SetDarkMode(ShouldAppsUseDarkMode());
-
-    m_ptcUiThread = eck::GetThreadCtx();
+    m_ptcUiThread = eck::PtcCurrent();
     CBass::Init();
-    App->GetPlayer().GetSignal().Connect(this, &CWndMain::OnPlayEvent);
-    m_pCompPlayPageAn = new CCompPlayPageAn{};
-    m_pCompNormalPageAn = new Dui::CCompositorPageAn{};
-    m_pCompNormalPageAn->SetWorkDC(GetDeviceContext());
-    m_pCompNormalPageAn->InitAsScaleBlur();
-    m_pCompNormalPageAn->InitAsScaleOpacity();
-    GetDeviceContext()->CreateSolidColorBrush({}, &m_pBrush);
+    App->GetPlayer().GetSignal().Connect(this, &CWindowMain::OnPlayEvent);
 
-    RegisterTimeLine(this);
+    KctRegisterTimeLine(this);
 
     MARGINS m{};// 不能使用-1，否则会绘制标准标题栏
     m.cxLeftWidth = 65536 * 4;
@@ -56,25 +40,25 @@ BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
 
     SmtcInit();
 
-    BlurInit();
+    BlurInitialize();
     BlurSetUseLayer(TRUE);
 
     ComPtr<IDWriteTextFormat> pTfPageTitle, pTfLeft, pTfCenter;
-    App->GetFontFactory().NewFont(pTfPageTitle.RefOf(), eck::Align::Near,
-        eck::Align::Center, (float)CyFontPageTitle, 600);
+    App->GetFontFactory().NewFont(pTfPageTitle.AtSelf(), eck::Alignment::Near,
+        eck::Alignment::Center, (float)CyFontPageTitle, 600);
     pTfPageTitle->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-    App->GetFontFactory().NewFont(pTfLeft.RefOf(), eck::Align::Near,
-        eck::Align::Center, (float)CyFontNormal);
+    App->GetFontFactory().NewFont(pTfLeft.AtSelf(), eck::Alignment::Near,
+        eck::Alignment::Center, (float)CyFontNormal);
     pTfLeft->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-    App->GetFontFactory().NewFont(pTfCenter.RefOf(), eck::Align::Center,
-        eck::Align::Center, (float)CyFontNormal);
+    App->GetFontFactory().NewFont(pTfCenter.AtSelf(), eck::Alignment::Center,
+        eck::Alignment::Center, (float)CyFontNormal);
     pTfCenter->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
     m_NormalPageContainer.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, 0, 0, nullptr, this);
     const auto pNormalParent = &m_NormalPageContainer;
     // 左侧选择夹
-    m_TabPanel.Create(nullptr, Dui::DES_VISIBLE | Dui::DES_NOTIFY_TO_WND, 0,
+    m_TabPanel.Create(nullptr, Dui::DES_VISIBLE | Dui::DES_NOTIFY_WND, 0,
         0, 0, 0, 0, pNormalParent, this);
     // 标题
     m_LAPageTitle.Create(nullptr, Dui::DES_VISIBLE, 0,
@@ -97,7 +81,7 @@ BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
         0, 0, 0, 0, pNormalParent, this);
     m_PageOptions.SetTextFormat(pTfLeft.Get());
     // 底部播放控制栏
-    m_PlayPanel.Create(nullptr, Dui::DES_VISIBLE/* | Dui::DES_BLURBKG*/, 0,
+    m_PlayPanel.Create(nullptr, Dui::DES_VISIBLE/* | Dui::DES_BLUR_BACK*/, 0,
         0, 0, 0, 0, pNormalParent, this);
     m_PlayPanel.SetTextFormat(pTfLeft.Get());
     // 页 播放
@@ -105,39 +89,35 @@ BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
     m_PagePlaying.Create(nullptr, 0, 0,
         0, 0, 0, 0, nullptr, this);
     m_PagePlaying.SetTextFormat(pTfLeft.Get());
-    App->GetFontFactory().NewFont(pTfPP.RefOfClear(), eck::Align::Near,
-        eck::Align::Center, (float)CyFontPlayPageLabel, 600);
+    App->GetFontFactory().NewFont(pTfPP.AtSelfClear(), eck::Alignment::Near,
+        eck::Alignment::Center, (float)CyFontPlayPageLabel, 600);
     pTfPP->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     m_PagePlaying.SetLabelTextFormatTitle(pTfPP.Get());
-    App->GetFontFactory().NewFont(pTfPP.RefOfClear(), eck::Align::Near,
-        eck::Align::Center, (float)CyFontPlayPageLabel);
+    App->GetFontFactory().NewFont(pTfPP.AtSelfClear(), eck::Alignment::Near,
+        eck::Alignment::Center, (float)CyFontPlayPageLabel);
     pTfPP->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     m_PagePlaying.SetLabelTextFormat(pTfPP.Get());
     // 进度条
     m_TBProgress.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxProgress, CyProgress, nullptr, this);
     m_TBProgress.SetRange(0, 100);
-    m_TBProgress.SetTrackPos(50);
+    m_TBProgress.SetTrackPosition(50);
     m_TBProgress.SetTrackSize(CyProgressTrack);
     m_TBProgress.SetThinTrack(TRUE);
     // 按钮 上一曲
     m_BTPrev.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButton, CxyCircleButton, nullptr, this);
-    m_BTPrev.SetTransparentBk(TRUE);
     // 按钮 播放/暂停
     m_BTPlay.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButtonBig, CxyCircleButtonBig, nullptr, this);
-    m_BTPlay.SetTheme(m_pVioletTheme);
     // 按钮 下一曲
     m_BTNext.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButton, CxyCircleButton, nullptr, this);
-    m_BTNext.SetTransparentBk(TRUE);
     // 按钮 播放模式
     m_BTAutoNext.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButton, CxyCircleButton, nullptr, this);
-    m_BTAutoNext.SetTransparentBk(TRUE);
-    m_BTAutoNext.GetSignal().Connect(
-        [](UINT uMsg, WPARAM wParam, LPARAM lParam, eck::SlotCtx& Ctx) -> LRESULT
+    m_BTAutoNext.GetEventChain().Connect(
+        [](UINT uMsg, WPARAM, LPARAM, eck::Slot&) -> LRESULT
         {
             if (uMsg == WM_RBUTTONDOWN)
             {
@@ -150,11 +130,9 @@ BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
     // 按钮 歌词
     m_BTLrc.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButton, CxyCircleButton, nullptr, this);
-    m_BTLrc.SetTransparentBk(TRUE);
     // 按钮 音量
     m_BTVol.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, CxyCircleButton, CxyCircleButton, nullptr, this);
-    m_BTVol.SetTransparentBk(TRUE);
     // 标题栏
     m_TitleBar.Create(nullptr, Dui::DES_VISIBLE, 0,
         0, 0, 0, 0, nullptr, this);
@@ -168,13 +146,12 @@ BOOL CWndMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
     OnCoverUpdate();
 
     OnColorSchemeChanged();
-    StUpdateColorizationColor();
     PageShow(Page::List, FALSE);
     m_TabPanel.GetTabList().SelectItemForClick(1);
     return TRUE;
 }
 
-void CWndMain::PageShow(Page ePage, BOOL bAnimate)
+void CWindowMain::PageShow(Page ePage, BOOL bAnimate)
 {
     __assume(ePage < Page::Max);
     const int idxShow = (int)ePage;
@@ -188,7 +165,7 @@ void CWndMain::PageShow(Page ePage, BOOL bAnimate)
         (m_vPage[idxShow]->GetStyle() & Dui::DES_VISIBLE);
 
     m_LAPageTitle.SetText(MainWndPageName[idxShow]);
-    m_LAPageTitle.InvalidateRect();
+    m_LAPageTitle.Invalidate();
     m_vPage[idxShow]->SetVisible(TRUE);
     for (int i = 0; i < idxShow; ++i)
         m_vPage[i]->SetVisible(FALSE);
@@ -199,34 +176,37 @@ void CWndMain::PageShow(Page ePage, BOOL bAnimate)
     {
         if (bAlreadyVisible)
             return;// 已经显示，不需要动画
+        m_ecPage.Start(0, (float)CyPageSwitchAnDelta, !!m_pAnPage);
         m_bPageAnUpToDown = (idxShow < idxShowLast);
         m_pAnPage = m_vPage[idxShow];
-        if (!m_pecPage)
+
+
+        if (!m_ecPage)
         {
             m_pecPage = new eck::CEasingCurve{};
             RegisterTimeLine(m_pecPage);
-            m_pecPage->SetParam((LPARAM)this);
+            m_pecPage->SetCallbackData((LPARAM)this);
             m_pecPage->SetDuration(250);
-            m_pecPage->SetAnProc(eck::Easing::OutCubic);
-            m_pecPage->SetCallBack([](float fCurrValue, float fOldValue, LPARAM lParam)
+            m_pecPage->SetProcedure(eck::Easing::OutCubic);
+            m_pecPage->SetCallback([](float fCurrValue, float fOldValue, LPARAM lParam)
                 {
-                    const auto p = (CWndMain*)lParam;
+                    const auto p = (CWindowMain*)lParam;
                     const auto x = p->m_pAnPage->GetRectF().left;
                     constexpr float yNormal = CyPageTitle + DTopPageTitle + CxPageIntPadding;
                     if (p->m_bPageAnUpToDown)
-                        p->m_pAnPage->SetPos(x, yNormal +
+                        p->m_pAnPage->SetPosition(x, yNormal +
                             CyPageSwitchAnDelta - fCurrValue);
                     else
-                        p->m_pAnPage->SetPos(x, yNormal -
+                        p->m_pAnPage->SetPosition(x, yNormal -
                             CyPageSwitchAnDelta + fCurrValue);
                 });
         }
-        m_pecPage->Begin(0, (float)CyPageSwitchAnDelta);
-        WakeRenderThread();
+        m_pecPage->Begin();
+        KctWake();
     }
 }
 
-void CWndMain::PageClearAnimation()
+void CWindowMain::PageClearAnimation()
 {
     if (!m_pAnPage)
         return;
@@ -234,8 +214,8 @@ void CWndMain::PageClearAnimation()
     m_pAnPage = nullptr;
 }
 
-HWND CWndMain::Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
-    int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData)
+HWND CWindowMain::Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
+    int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData) noexcept
 {
     TblCreateGhostWindow(pszText);
     TblCreateObjectAndInit();
@@ -245,7 +225,7 @@ HWND CWndMain::Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
     return hWnd;
 }
 
-void CWndMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
+void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
 {
     switch (e.eEvent)
     {
@@ -255,8 +235,8 @@ void CWndMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         if (m_msProgTimer >= TE_PROG)
         {
             m_msProgTimer = 0;
-            m_TBProgress.SetTrackPos(float(App->GetPlayer().GetCurrTime() * ProgBarScale));
-            m_TBProgress.InvalidateRect();
+            m_TBProgress.SetTrackPosition(float(App->GetPlayer().GetCurrentTime() * ProgBarScale));
+            m_TBProgress.Invalidate();
             TblUpdateProgress();
         }
         SmtcOnCommonTick();
@@ -270,11 +250,11 @@ void CWndMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         SmtcUpdateDisplay();
         TblUpdateProgress();
         if (m_PagePlaying.GetStyle() & Dui::DES_VISIBLE)
-            m_PagePlaying.InvalidateRect();
+            m_PagePlaying.Invalidate();
         m_TBProgress.SetRange(0.f, float(App->GetPlayer().GetTotalTime() * ProgBarScale));
-        m_TBProgress.SetTrackPos(0.f);
-        m_TBProgress.InvalidateRect();
-        m_PlayPanel.InvalidateRect();
+        m_TBProgress.SetTrackPosition(0.f);
+        m_TBProgress.Invalidate();
+        m_PlayPanel.Invalidate();
         m_WndTbGhost.InvalidateThumbnailCache();
         m_WndTbGhost.InvalidateDwmThumbnail();
         m_WndTbGhost.SetIconicThumbnail();
@@ -282,25 +262,25 @@ void CWndMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
     [[fallthrough]];
     case PlayEvt::Resume:
     {
-        SetTimer(HWnd, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
-        m_BTPlay.SetImage(RealizeImage(GImg::Pause));
-        m_BTPlay.InvalidateRect();
+        SetTimer(Handle, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
+        m_BTPlay.SetIcon(RealizeImage(AppIcon::Pause));
+        m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
     }
     break;
     case PlayEvt::Stop:
     {
-        m_TBProgress.SetTrackPos(0.f);
-        m_TBProgress.InvalidateRect();
+        m_TBProgress.SetTrackPosition(0.f);
+        m_TBProgress.Invalidate();
         TblUpdateProgress();
     }
     [[fallthrough]];
     case PlayEvt::Pause:
     {
-        KillTimer(HWnd, IDT_COMM_TICK);
-        m_BTPlay.SetImage(RealizeImage(GImg::Triangle));
-        m_BTPlay.InvalidateRect();
+        KillTimer(Handle, IDT_COMM_TICK);
+        m_BTPlay.SetImage(RealizeImage(AppIcon::Triangle));
+        m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
     }
@@ -308,7 +288,7 @@ void CWndMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
     }
 }
 
-LRESULT CWndMain::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     if (uMsg == MsgTaskbarButtonCreated)
     {
@@ -324,11 +304,11 @@ LRESULT CWndMain::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_SIZE:
     {
-        const auto lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
+        const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
         PageClearAnimation();
-        const auto cxClient = GetClientWidthLog();
-        const auto cyClient = GetClientHeightLog();
-        m_pCompNormalPageAn->RefPoint = { cxClient / 2.f,cyClient / 2.f };
+        const auto cxClient = GetClientWidthLogical();
+        const auto cyClient = GetClientHeightLogical();
+        m_CompNormalPageAn.RefPoint = { cxClient / 2.f,cyClient / 2.f };
         m_NormalPageContainer.SetRect({ 0,0,cxClient,cyClient });
         m_TitleBar.SetRect({ 0,0,cxClient,CyTitleBar });
         m_TabPanel.SetRect({ 0,0,CxTabPanel,cyClient - CyPlayPanel });
@@ -361,10 +341,10 @@ LRESULT CWndMain::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_NCCALCSIZE:
     {
-        const auto cxFrame = eck::DaGetSystemMetrics(SM_CXFRAME, GetDpiValue());
-        const auto cyFrame = eck::DaGetSystemMetrics(SM_CYFRAME, GetDpiValue());
-        const auto cxPadded = eck::DaGetSystemMetrics(SM_CXPADDEDBORDER, GetDpiValue());
-        return eck::MsgOnNcCalcSize(wParam, lParam,
+        const auto cxFrame = eck::DaGetSystemMetrics(SM_CXFRAME, GetWindowDpi());
+        const auto cyFrame = eck::DaGetSystemMetrics(SM_CYFRAME, GetWindowDpi());
+        const auto cxPadded = eck::DaGetSystemMetrics(SM_CXPADDEDBORDER, GetWindowDpi());
+        return eck::MsgOnNcCalculateSize(wParam, lParam,
             { cxFrame + cxPadded,cxFrame + cxPadded,0,cyFrame + cxPadded });
     }
     break;
@@ -375,27 +355,26 @@ LRESULT CWndMain::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_CREATE:
-        __super::OnMsg(hWnd, uMsg, wParam, lParam);
-        return HANDLE_WM_CREATE(hWnd, wParam, lParam, OnCreate);
+        __super::OnMessage(uMsg, wParam, lParam);
+        return HANDLE_WM_CREATE(Handle, wParam, lParam, OnCreate);
     case WM_DESTROY:
-        KillTimer(hWnd, IDT_COMM_TICK);
-        __super::OnMsg(hWnd, uMsg, wParam, lParam);
+        KillTimer(Handle, IDT_COMM_TICK);
+        __super::OnMessage(uMsg, wParam, lParam);
         m_WndTbGhost.Destroy();
         SmtcUnInit();
         ClearRes();
         PostQuitMessage(0);
         return 0;
     case WM_SYSCOLORCHANGE:
-        eck::MsgOnSysColorChangeMainWnd(hWnd, wParam, lParam);
+        eck::MsgOnSystemColorChangeMainWindow(Handle, wParam, lParam);
         break;
     case WM_SETTINGCHANGE:
     {
-        if (eck::MsgOnSettingChangeMainWnd(hWnd, wParam, lParam, TRUE))
+        if (eck::MsgOnSettingChangeMainWindow(Handle, wParam, lParam, TRUE))
         {
             InvalidateRealizedImage();
             const auto bDark = ShouldAppsUseDarkMode();
             App->SetDarkMode(bDark);
-            StSwitchStdThemeMode(bDark);
             OnColorSchemeChanged();
             TblUpdateToolBarIcon();
             m_WndTbGhost.InvalidateDwmThumbnail();
@@ -413,17 +392,17 @@ LRESULT CWndMain::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         break;
     case WM_SETTEXT:
     {
-        const auto lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
+        const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
         if (lResult)
             m_WndTbGhost.SetText((PCWSTR)lParam);
         return lResult;
     }
     break;
     }
-    return __super::OnMsg(hWnd, uMsg, wParam, lParam);
+    return __super::OnMessage(uMsg, wParam, lParam);
 }
 
-LRESULT CWndMain::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept
 {
     switch (uMsg)
     {
@@ -455,7 +434,7 @@ LRESULT CWndMain::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARA
     {
         ECK_DUILOCK;
         PpaPrepare();
-        WakeRenderThread();
+        KctWake();
     }
     return 0;
     case ELEN_PLAYPAGE_LBTN_UP:
@@ -463,12 +442,8 @@ LRESULT CWndMain::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARA
         ECK_DUILOCKWND;
         if (m_bPPAnActive)
         {
-            const auto dwPos = GetMessagePos();
-            POINT pt;
-            POINTSTOPOINT(pt, dwPos);
-
             PpaPrepare();
-            WakeRenderThread();
+            KctWake();
         }
     }
     return 0;
@@ -487,20 +462,19 @@ LRESULT CWndMain::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARA
         {
             const auto r = App->GetPlayer().NextAutoNextMode();
             m_BTAutoNext.SetImage(RealizeImage(AutoNextModeToGImg(r)));
-            m_BTAutoNext.InvalidateRect();
+            m_BTAutoNext.Invalidate();
         }
         else if (pElem == &m_BTVol)
         {
-            const auto x = GetClientWidthLog() - CxVolBar - CxVolBarPadding;
+            const auto x = GetClientWidthLogical() - CxVolBar - CxVolBarPadding;
             const auto y = m_BTVol.GetOffsetInClientF().y - CyVolBar;
-            m_VolBar.SetPos(x, y);
+            m_VolBar.SetPosition(x, y);
             m_VolBar.ShowAnimation();
         }
         else if (pElem->GetID() == ELEID_PLAYPAGE_BACK)
         {
-            ECK_DUILOCK;
             PpaPrepare();
-            WakeRenderThread();
+            KctWake();
         }
     }
     break;
@@ -508,9 +482,8 @@ LRESULT CWndMain::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARA
     return __super::OnElemEvent(pElem, uMsg, wParam, lParam);
 }
 
-ID2D1Bitmap1* CWndMain::RealizeImage(GImg n)
+ID2D1Bitmap1* CWindowMain::RealizeImage(AppIcon n)
 {
-    ECK_DUILOCKWND;
     if (!m_vBmpRealization[(size_t)n])
     {
         GetDeviceContext()->CreateBitmapFromWicBitmap(App->GetImg(n),
@@ -520,7 +493,88 @@ ID2D1Bitmap1* CWndMain::RealizeImage(GImg n)
     return m_vBmpRealization[(size_t)n];
 }
 
-void CWndMain::TlTick(int iMs)
+void CWindowMain::TlTick(int iMs) noexcept
+{
+
+}
+
+void CWindowMain::LwShow(BOOL bShow)
+{
+    if (bShow)
+    {
+        if (m_WndLrc.IsValid())
+            m_WndLrc.Show(SW_SHOWNOACTIVATE);
+        else
+        {
+            m_WndLrc.SetPresentMode(Dui::PresentMode::UpdateLayeredWindow);
+            m_WndLrc.SetTransparent(TRUE);
+            m_WndLrc.SetUserDpi(GetUserDpi());
+            m_WndLrc.Create(L"VioletModel - Lyrics", WS_POPUP | WS_VISIBLE,
+                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
+                300, 400, 500, 300, Handle, nullptr);
+        }
+        m_WndLrc.Redraw();
+    }
+    else
+        if (m_WndLrc.IsValid())
+            m_WndLrc.Show(SW_HIDE);
+}
+
+BOOL CWindowMain::LwIsShowing()
+{
+    return m_WndLrc.IsValid() && m_WndLrc.IsVisible();
+}
+
+void CWindowMain::UpdateButtonImageSize()
+{
+    constexpr D2D1_SIZE_F Size{ CxyCircleButtonImage, CxyCircleButtonImage };
+    m_BTPrev.SetImageSize(Size);
+    m_BTPlay.SetImageSize(Size);
+    m_BTNext.SetImageSize(Size);
+    m_BTLrc.SetImageSize(Size);
+    m_BTVol.SetImageSize(Size);
+}
+
+void CWindowMain::PpaPrepare()
+{
+    ECKBOOLNOT(m_bPPAnReverse);
+    const auto kBegin = m_bPPAnReverse ? 0.f : 1.f;
+    const auto kEnd = m_bPPAnReverse ? 1.f : 0.f;
+    m_PlayPageAn.Start(kBegin, kEnd, m_bPPAnActive);
+    EckCounter(4, i)
+    {
+        m_PPCornerAn[i].Start(kBegin, kEnd, m_bPPCornerAnActive[i]);
+        m_bPPCornerAnActive[i] = TRUE;
+    }
+    m_bPPAnActive = TRUE;
+    if (!m_bPPAnReverse)
+    {
+        m_NormalPageContainer.SetVisible(TRUE);
+        m_PlayPanel.m_Cover.SetVisible(TRUE);
+        m_PlayPanel.SetVisible(TRUE);
+    }
+    m_PagePlaying.SetVisible(TRUE);
+    KctWake();
+}
+
+void CWindowMain::PpaEnd()
+{
+    m_bPPAnActive = FALSE;
+    ZeroMemory(m_bPPCornerAnActive, sizeof(m_bPPCornerAnActive));
+    m_PagePlaying.SetCompositor(nullptr);
+    m_NormalPageContainer.SetCompositor(nullptr);
+    m_NormalPageContainer.SetStyle(m_NormalPageContainer.GetStyle() &
+        ~Dui::DES_BASE_BEGIN_END_PAINT);
+    if (m_bPPAnReverse)
+    {
+        m_NormalPageContainer.SetVisible(FALSE);
+        m_PlayPanel.SetVisible(FALSE);
+    }
+    else
+        m_PagePlaying.SetVisible(FALSE);
+}
+
+void CWindowMain::PpaTick(int ms) noexcept
 {
     Redraw(FALSE);
     constexpr float MinDistance = 0.4f;
@@ -549,12 +603,12 @@ void CWndMain::TlTick(int iMs)
     }
     // 页面动画更新
     const auto kOverlay = std::clamp(m_PlayPageAn.Time / DurOverlayOpacity, 0.f, 1.f);
-    m_pCompPlayPageAn->Opacity = (m_bPPAnReverse ? (1.f - kOverlay) : kOverlay);
-    m_pCompNormalPageAn->Scale = 1.f - m_PlayPageAn.K * 0.2f;
-    m_pCompNormalPageAn->Update2DAffineTransform();
-    m_pCompNormalPageAn->SetBlurStdDeviation(20.f * m_PlayPageAn.K);
-    m_pCompNormalPageAn->Opacity = 1.f - m_PlayPageAn.K;
-    m_pCompNormalPageAn->UpdateOpacity();
+    m_CompPlayPageAn.SetOpacity(m_bPPAnReverse ? (1.f - kOverlay) : kOverlay);
+    m_CompNormalPageAn.Scale = 1.f - m_PlayPageAn.K * 0.2f;
+    m_CompNormalPageAn.Update2DAffineTransform();
+    m_CompNormalPageAn.SetBlurStdDeviation(20.f * m_PlayPageAn.K);
+    m_CompNormalPageAn.Opacity = 1.f - m_PlayPageAn.K;
+    m_CompNormalPageAn.UpdateOpacity();
 
     D2D1_POINT_2F pt[4];
     const D2D1_POINT_2F ptMini[]
@@ -576,7 +630,7 @@ void CWndMain::TlTick(int iMs)
     EckCounter(4, i)
     {
         m_bPPCornerAnActive[i] = m_PPCornerAn[i].Tick((float)iMs, pDur[i]);
-        eck::CalcPointFromLineScalePos(ptMini[i].x, ptMini[i].y,
+        eck::CalculatePointFromLineScale(ptMini[i].x, ptMini[i].y,
             ptLarge[i].x, ptLarge[i].y, m_PPCornerAn[i].K, pt[i].x, pt[i].y);
         if (m_bPPAnReverse)
         {
@@ -592,150 +646,75 @@ void CWndMain::TlTick(int iMs)
         }
     }
 
-    m_pCompPlayPageAn->Mat = eck::CalcDistortMatrix(m_rcPPLarge, pt);
-    m_pCompPlayPageAn->MatR = eck::CalcInverseDistortMatrix(m_rcPPLarge, pt);
+    eck::CalculateDistortMatrix(m_rcPPLarge, pt,
+        *(D2D1_MATRIX_4X4_F*)m_CompPlayPageAn.AtMatrix());
+    eck::CalculateInverseDistortMatrix(m_rcPPLarge, pt,
+        *(D2D1_MATRIX_4X4_F*)m_CompPlayPageAn.AtMatrixR());
     if (!m_PagePlaying.GetCompositor())
-        m_PagePlaying.SetCompositor(m_pCompPlayPageAn);
+        m_PagePlaying.SetCompositor(&m_CompPlayPageAn);
     if (!m_NormalPageContainer.GetCompositor())
     {
-        m_NormalPageContainer.SetCompositor(m_pCompNormalPageAn);
+        m_NormalPageContainer.SetCompositor(&m_CompNormalPageAn);
         m_NormalPageContainer.SetStyle(Dui::DES_BASE_BEGIN_END_PAINT |
             m_NormalPageContainer.GetStyle());
     }
-    m_PagePlaying.CompReCalcCompositedRect();
-    m_NormalPageContainer.CompReCalcCompositedRect();
+    m_PagePlaying.CompUpdateCompositedRect();
+    m_NormalPageContainer.CompUpdateCompositedRect();
     if (!bStillRunning)
         PpaEnd();
     Redraw(FALSE);
 }
 
-void CWndMain::LwShow(BOOL bShow)
+void CWindowMain::RePosPalyPanelControl()
 {
-    if (bShow)
-    {
-        if (m_WndLrc.IsValid())
-            m_WndLrc.Show(SW_SHOWNOACTIVATE);
-        else
-        {
-            m_WndLrc.SetPresentMode(Dui::PresentMode::UpdateLayeredWindow);
-            m_WndLrc.SetTransparent(TRUE);
-            m_WndLrc.SetUserDpi(GetUserDpi());
-            m_WndLrc.Create(L"VioletModel - Lyrics", WS_POPUP | WS_VISIBLE,
-                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
-                300, 400, 500, 300, HWnd, nullptr);
-        }
-        m_WndLrc.Redraw();
-    }
-    else
-        if (m_WndLrc.IsValid())
-            m_WndLrc.Show(SW_HIDE);
-}
-
-BOOL CWndMain::LwIsShowing()
-{
-    return m_WndLrc.IsValid() && m_WndLrc.IsVisible();
-}
-
-void CWndMain::UpdateButtonImageSize()
-{
-    constexpr D2D1_SIZE_F Size{ CxyCircleButtonImage, CxyCircleButtonImage };
-    m_BTPrev.SetImageSize(Size);
-    m_BTPlay.SetImageSize(Size);
-    m_BTNext.SetImageSize(Size);
-    m_BTLrc.SetImageSize(Size);
-    m_BTVol.SetImageSize(Size);
-}
-
-void CWndMain::PpaPrepare()
-{
-    ECKBOOLNOT(m_bPPAnReverse);
-    const auto kBegin = m_bPPAnReverse ? 0.f : 1.f;
-    const auto kEnd = m_bPPAnReverse ? 1.f : 0.f;
-    m_PlayPageAn.Start(kBegin, kEnd, m_bPPAnActive);
-    EckCounter(4, i)
-    {
-        m_PPCornerAn[i].Start(kBegin, kEnd, m_bPPCornerAnActive[i]);
-        m_bPPCornerAnActive[i] = TRUE;
-    }
-    m_bPPAnActive = TRUE;
-    if (!m_bPPAnReverse)
-    {
-        m_NormalPageContainer.SetVisible(TRUE);
-        m_PlayPanel.m_Cover.SetVisible(TRUE);
-        m_PlayPanel.SetVisible(TRUE);
-    }
-    m_PagePlaying.SetVisible(TRUE);
-    WakeRenderThread();
-}
-
-void CWndMain::PpaEnd()
-{
-    m_bPPAnActive = FALSE;
-    ZeroMemory(m_bPPCornerAnActive, sizeof(m_bPPCornerAnActive));
-    m_PagePlaying.SetCompositor(nullptr);
-    m_NormalPageContainer.SetCompositor(nullptr);
-    m_NormalPageContainer.SetStyle(m_NormalPageContainer.GetStyle() &
-        ~Dui::DES_BASE_BEGIN_END_PAINT);
-    if (m_bPPAnReverse)
-    {
-        m_NormalPageContainer.SetVisible(FALSE);
-        m_PlayPanel.SetVisible(FALSE);
-    }
-    else
-        m_PagePlaying.SetVisible(FALSE);
-}
-
-void CWndMain::RePosPalyPanelControl()
-{
-    const auto cxClient = GetClientWidthLog();
-    const auto cyClient = GetClientHeightLog();
+    const auto cxClient = GetClientWidthLogical();
+    const auto cyClient = GetClientHeightLogical();
     float x, y;
     // 移动右侧按钮
     x = cxClient - DRightPaddingSmallCircleBtn - CxyCircleButton;
     y = cyClient - CyPlayPanel + (CyPlayPanel - CxyCircleButton) / 2;
-    m_BTVol.SetPos(x, y);
+    m_BTVol.SetPosition(x, y);
     x -= (CxyCircleButton + CxPaddingCircleButton);
-    m_BTLrc.SetPos(x, y);
+    m_BTLrc.SetPosition(x, y);
     x -= (CxyCircleButton + CxPaddingCircleButton);
-    m_BTAutoNext.SetPos(x, y);
+    m_BTAutoNext.SetPosition(x, y);
     // 移动中间按钮
     x = (cxClient - (CxyCircleButton * 2 + CxyCircleButtonBig +
         CxPaddingCircleButton * 2)) / 2;
     y = cyClient - CyPlayPanel + DTopCtrlBtn;
 
-    m_BTPrev.SetPos(x, y);
+    m_BTPrev.SetPosition(x, y);
     x += (CxyCircleButton + CxPaddingCircleButton);
-    m_BTPlay.SetPos(x, y + (  CxyCircleButton- CxyCircleButtonBig) / 2);
+    m_BTPlay.SetPosition(x, y + (  CxyCircleButton- CxyCircleButtonBig) / 2);
     x += (CxyCircleButtonBig + CxPaddingCircleButton);
-    m_BTNext.SetPos(x, y);
+    m_BTNext.SetPosition(x, y);
     // 移动进度条
-    m_TBProgress.SetPos((cxClient - CxProgress) / 2.f, cyClient - CyProgress - 6.f);
+    m_TBProgress.SetPosition((cxClient - CxProgress) / 2.f, cyClient - CyProgress - 6.f);
 }
 
-void CWndMain::OnCoverUpdate()
+void CWindowMain::OnCoverUpdate()
 {
     const auto pBmp = m_PagePlaying.m_pBmpCover;
     if (pBmp)
     {
-        m_pCompPlayPageAn->SetOverlayBitmap(pBmp);
+        m_CompPlayPageAn.SetOverlayBitmap(pBmp);
         m_PlayPanel.m_Cover.SetBitmap(pBmp);
     }
 }
 
-void CWndMain::OnColorSchemeChanged()
+void CWindowMain::OnColorSchemeChanged()
 {
-    m_BTPrev.SetImage(RealizeImage(GImg::Prev));
-    m_BTPlay.SetImage(RealizeImage(GImg::Triangle));
-    m_BTNext.SetImage(RealizeImage(GImg::Next));
+    m_BTPrev.SetImage(RealizeImage(AppIcon::Prev));
+    m_BTPlay.SetImage(RealizeImage(AppIcon::Triangle));
+    m_BTNext.SetImage(RealizeImage(AppIcon::Next));
     m_BTAutoNext.SetImage(RealizeImage(
         AutoNextModeToGImg(App->GetPlayer().GetAutoNextMode())));
-    m_BTLrc.SetImage(RealizeImage(GImg::Lrc));
-    m_BTVol.SetImage(RealizeImage(GImg::PlayerVolume3));
+    m_BTLrc.SetImage(RealizeImage(AppIcon::Lrc));
+    m_BTVol.SetImage(RealizeImage(AppIcon::PlayerVolume3));
 }
 
-void CWndMain::InvalidateRealizedImage()
+void CWindowMain::InvalidateRealizedImage()
 {
-    ECK_DUILOCKWND;
     for (auto& e : m_vBmpRealization)
         SafeRelease(e);
 }

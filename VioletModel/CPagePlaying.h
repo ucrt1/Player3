@@ -4,9 +4,9 @@
 #include "CApp.h"
 
 // CWndMain负责更新该元素的图片
-class CPagePlaying : public Dui::CElem
+class CPagePlaying : public Dui::CElement
 {
-	friend class CWndMain;
+	friend class CWindowMain;
 private:
 	CVeCover m_Cover{};
 	CVeLrc m_Lrc{};
@@ -27,7 +27,7 @@ private:
 
 	void OnColorSchemeChanged();
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
 	void SetLabelTextFormatTitle(IDWriteTextFormat* pTf)
 	{

@@ -1,15 +1,20 @@
 ﻿#include "pch.h"
 #include "CWndMain.h"
 
-static HRESULT ScaleImageForButton(GImg eImg, int iDpi,
-	_Out_ IWICBitmap*& pBmp)
+static HRESULT ScaleImageForButton(
+	AppIcon eImg,
+	int iDpi,
+	_Out_ IWICBitmapSource*& pSource)
 {
 	const auto cxy = eck::DpiScale(20, iDpi);
-	return eck::ScaleWicBitmap(App->GetImg(eImg), pBmp,
-		cxy, cxy, WICBitmapInterpolationModeFant);
+	ComPtr<IWICBitmapScaler> pScaler;
+	HRESULT hr;
+	if (FAILED(hr = eck::g_pWicFactory->CreateBitmapScaler(&pScaler)))
+		return hr;
+	return pScaler->Initialize(App->GetImg(eImg), cxy, cxy, WICBitmapInterpolationModeFant);
 }
 
-HRESULT CWndMain::TblCreateGhostWindow(PCWSTR pszText)
+HRESULT CWindowMain::TblCreateGhostWindow(PCWSTR pszText)
 {
 	m_WndTbGhost.Create(pszText, WS_OVERLAPPEDWINDOW,
 		WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
@@ -17,68 +22,60 @@ HRESULT CWndMain::TblCreateGhostWindow(PCWSTR pszText)
 	return S_OK;
 }
 
-HRESULT CWndMain::TblSetup()
+HRESULT CWindowMain::TblSetup()
 {
-	m_pTaskbarList->UnregisterTab(m_WndTbGhost.HWnd);
-	m_pTaskbarList->RegisterTab(m_WndTbGhost.HWnd, HWnd);
+	m_pTaskbarList->UnregisterTab(m_WndTbGhost.Handle);
+	m_pTaskbarList->RegisterTab(m_WndTbGhost.Handle, Handle);
 #pragma warning(suppress: 6387)// 可能为NULL
-	m_pTaskbarList->SetTabOrder(m_WndTbGhost.HWnd, nullptr);
+	m_pTaskbarList->SetTabOrder(m_WndTbGhost.Handle, nullptr);
 
 	HICON hiPrev, hiNext;
-	IWICBitmap* pBmp;
-	ScaleImageForButton(GImg::PrevSolid, GetDpiValue(), pBmp);
-	hiPrev = eck::CreateHICON(pBmp);
-	pBmp->Release();
-	ScaleImageForButton(GImg::TriangleSolid, GetDpiValue(), pBmp);
-	m_hiTbPlay.reset(eck::CreateHICON(pBmp));
-	pBmp->Release();
-	ScaleImageForButton(GImg::PauseSolid, GetDpiValue(), pBmp);
-	m_hiTbPause.reset(eck::CreateHICON(pBmp));
-	pBmp->Release();
-	ScaleImageForButton(GImg::NextSolid, GetDpiValue(), pBmp);
-	hiNext = eck::CreateHICON(pBmp);
-	pBmp->Release();
+	ComPtr<IWICBitmapSource> pBitmap;
+	ScaleImageForButton(AppIcon::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(hiPrev, pBitmap.Get());
+	ScaleImageForButton(AppIcon::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(m_hiTbPlay, pBitmap.Get());
+	ScaleImageForButton(AppIcon::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(m_hiTbPause, pBitmap.Get());
+	ScaleImageForButton(AppIcon::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(hiNext, pBitmap.Get());
 
 	THUMBBUTTON tb[3]{};
 	constexpr auto dwMask = THB_ICON | THB_TOOLTIP;
 	tb[0].dwMask = dwMask;
 	tb[0].hIcon = hiPrev;
 	tb[0].iId = IDTBB_PREV;
-	eck::TcsCopyLen(tb[0].szTip, EckArrAndLen(L"上一曲"));
+	eck::TcsCopyLength(tb[0].szTip, EckArgArray(L"上一曲"));
 
 	tb[1].dwMask = dwMask;
-	tb[1].hIcon = m_hiTbPlay.get();
+	tb[1].hIcon = m_hiTbPlay;
 	tb[1].iId = IDTBB_PLAY;
-	eck::TcsCopyLen(tb[1].szTip, EckArrAndLen(L"播放"));
+	eck::TcsCopyLength(tb[1].szTip, EckArgArray(L"播放"));
 
 	tb[2].dwMask = dwMask;
 	tb[2].hIcon = hiNext;
 	tb[2].iId = IDTBB_NEXT;
-	eck::TcsCopyLen(tb[2].szTip, EckArrAndLen(L"下一曲"));
+	eck::TcsCopyLength(tb[2].szTip, EckArgArray(L"下一曲"));
 
 	const auto hr = m_pTaskbarList->ThumbBarAddButtons(
-		m_WndTbGhost.HWnd, ARRAYSIZE(tb), tb);
+		m_WndTbGhost.Handle, ARRAYSIZE(tb), tb);
 	DestroyIcon(hiNext);
 	DestroyIcon(hiPrev);
 	return S_OK;
 }
 
-HRESULT CWndMain::TblUpdateToolBarIcon()
+HRESULT CWindowMain::TblUpdateToolBarIcon()
 {
 	HICON hiPrev, hiNext;
-	IWICBitmap* pBmp;
-	ScaleImageForButton(GImg::PrevSolid, GetDpiValue(), pBmp);
-	hiPrev = eck::CreateHICON(pBmp);
-	pBmp->Release();
-	ScaleImageForButton(GImg::TriangleSolid, GetDpiValue(), pBmp);
-	m_hiTbPlay.reset(eck::CreateHICON(pBmp));
-	pBmp->Release();
-	ScaleImageForButton(GImg::PauseSolid, GetDpiValue(), pBmp);
-	m_hiTbPause.reset(eck::CreateHICON(pBmp));
-	pBmp->Release();
-	ScaleImageForButton(GImg::NextSolid, GetDpiValue(), pBmp);
-	hiNext = eck::CreateHICON(pBmp);
-	pBmp->Release();
+	ComPtr<IWICBitmapSource> pBitmap;
+	ScaleImageForButton(AppIcon::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(hiPrev, pBitmap.Get());
+	ScaleImageForButton(AppIcon::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(m_hiTbPlay, pBitmap.Get());
+	ScaleImageForButton(AppIcon::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(m_hiTbPause, pBitmap.Get());
+	ScaleImageForButton(AppIcon::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	eck::WicCreateIcon(hiNext, pBitmap.Get());
 
 	THUMBBUTTON tb[3]{};
 	constexpr auto dwMask = THB_ICON;
@@ -87,20 +84,20 @@ HRESULT CWndMain::TblUpdateToolBarIcon()
 	tb[0].iId = IDTBB_PREV;
 
 	tb[1].dwMask = dwMask;
-	tb[1].hIcon = m_hiTbPlay.get();
+	tb[1].hIcon = m_hiTbPlay;
 	tb[1].iId = IDTBB_PLAY;
 
 	tb[2].dwMask = dwMask;
 	tb[2].hIcon = hiNext;
 	tb[2].iId = IDTBB_NEXT;
 
-	m_pTaskbarList->ThumbBarUpdateButtons(m_WndTbGhost.HWnd, ARRAYSIZE(tb), tb);
+	m_pTaskbarList->ThumbBarUpdateButtons(m_WndTbGhost.Handle, ARRAYSIZE(tb), tb);
 	DestroyIcon(hiNext);
 	DestroyIcon(hiPrev);
 	return S_OK;
 }
 
-HRESULT CWndMain::TblCreateObjectAndInit()
+HRESULT CWindowMain::TblCreateObjectAndInit()
 {
 	if (m_pTaskbarList.Get())
 		return S_FALSE;
@@ -108,7 +105,7 @@ HRESULT CWndMain::TblCreateObjectAndInit()
 	return m_pTaskbarList->HrInit();
 }
 
-BOOL CWndMain::TblOnCommand(WPARAM wParam)
+BOOL CWindowMain::TblOnCommand(WPARAM wParam)
 {
 	if (HIWORD(wParam) != THBN_CLICKED)
 		return FALSE;
@@ -127,38 +124,38 @@ BOOL CWndMain::TblOnCommand(WPARAM wParam)
 	return FALSE;
 }
 
-HRESULT CWndMain::TblUpdateState()
+HRESULT CWindowMain::TblUpdateState()
 {
 	HRESULT hr;
 	const auto& Player = App->GetPlayer();
 	if (Player.IsActive())
 		hr = m_pTaskbarList->SetProgressState(
-			HWnd, Player.IsPaused() ? TBPF_PAUSED : TBPF_NORMAL);
+			Handle, Player.IsPaused() ? TBPF_PAUSED : TBPF_NORMAL);
 	else
-		hr = m_pTaskbarList->SetProgressState(HWnd, TBPF_NOPROGRESS);
+		hr = m_pTaskbarList->SetProgressState(Handle, TBPF_NOPROGRESS);
 	if (FAILED(hr)) return hr;
 
 	const auto bPauseIcon = (Player.IsActive() && !Player.IsPaused());
 	THUMBBUTTON tb{};
 	tb.dwMask = THB_ICON | THB_TOOLTIP;
 	tb.iId = IDTBB_PLAY;
-	tb.hIcon = bPauseIcon ? m_hiTbPause.get() : m_hiTbPlay.get();
+	tb.hIcon = bPauseIcon ? m_hiTbPause : m_hiTbPlay;
 	if (bPauseIcon)
-		eck::TcsCopyLen(tb.szTip, EckArrAndLen(L"暂停"));
+		eck::TcsCopyLength(tb.szTip, EckArgArray(L"暂停"));
 	else
-		eck::TcsCopyLen(tb.szTip, EckArrAndLen(L"播放"));
-	return m_pTaskbarList->ThumbBarUpdateButtons(m_WndTbGhost.HWnd, 1, &tb);
+		eck::TcsCopyLength(tb.szTip, EckArgArray(L"播放"));
+	return m_pTaskbarList->ThumbBarUpdateButtons(m_WndTbGhost.Handle, 1, &tb);
 }
 
-HRESULT CWndMain::TblUpdateProgress()
+HRESULT CWindowMain::TblUpdateProgress()
 {
 	const auto& Player = App->GetPlayer();
-	return m_pTaskbarList->SetProgressValue(HWnd,
-		ULONGLONG(Player.GetCurrTime() * 1000.),
+	return m_pTaskbarList->SetProgressValue(Handle,
+		ULONGLONG(Player.GetCurrentTime() * 1000.),
 		ULONGLONG(Player.GetTotalTime() * 1000.));
 }
 
-HRESULT CWndMain::TblOnTaskbarButtonCreated()
+HRESULT CWindowMain::TblOnTaskbarButtonCreated()
 {
 	HRESULT hr;
 	if (FAILED(hr = TblSetup()))
@@ -173,7 +170,7 @@ HRESULT CWndMain::TblOnTaskbarButtonCreated()
 	return S_OK;
 }
 
-HRESULT CWndMain::SmtcInit() noexcept
+HRESULT CWindowMain::SmtcInit() noexcept
 {
 #if VIOLET_WINRT
 	HRESULT hr;
@@ -184,7 +181,7 @@ HRESULT CWndMain::SmtcInit() noexcept
 	if (SUCCEEDED(hr))
 	{
 		eck::CRefStrW rsLink{ pszProgramPath };
-		rsLink.PushBack(EckStrAndLen(L"\\VioletModel.lnk"));
+		rsLink.PushBack(EckArgString(L"\\VioletModel.lnk"));
 		if (!PathFileExistsW(rsLink.Data()))
 			eck::CreateShortcut(rsLink.Data(),
 				NtCurrentPeb()->ProcessParameters->ImagePathName.Buffer);
@@ -196,7 +193,7 @@ HRESULT CWndMain::SmtcInit() noexcept
 		const auto pSmtcInterop = winrt::get_activation_factory<
 			WinMedia::SystemMediaTransportControls,
 			ISystemMediaTransportControlsInterop>();
-		hr = pSmtcInterop->GetForWindow(HWnd,
+		hr = pSmtcInterop->GetForWindow(Handle,
 			winrt::guid_of<WinMedia::SystemMediaTransportControls>(),
 			winrt::put_abi(m_Smtc));
 		if (FAILED(hr)) return hr;
@@ -247,7 +244,7 @@ HRESULT CWndMain::SmtcInit() noexcept
 }
 
 #if VIOLET_WINRT
-eck::CoroTask<> CWndMain::SmtcpCoroUpdateDisplay()
+eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay()
 {
 	const auto mi = App->GetPlayer().GetMusicInfo();// 复制一份
 	auto Token{ co_await eck::CoroGetPromiseToken() };
@@ -304,7 +301,7 @@ eck::CoroTask<> CWndMain::SmtcpCoroUpdateDisplay()
 }
 #endif// VIOLET_WINRT
 
-HRESULT CWndMain::SmtcUpdateDisplay() noexcept
+HRESULT CWindowMain::SmtcUpdateDisplay() noexcept
 {
 #if VIOLET_WINRT
 	if (m_TskSmtcUpdateDisplay.hCoroutine &&
@@ -320,7 +317,7 @@ HRESULT CWndMain::SmtcUpdateDisplay() noexcept
 #endif// VIOLET_WINRT
 }
 
-HRESULT CWndMain::SmtcOnCommonTick() noexcept
+HRESULT CWindowMain::SmtcOnCommonTick() noexcept
 {
 #if VIOLET_WINRT
 	const auto ullTick = NtGetTickCount64();
@@ -336,7 +333,7 @@ HRESULT CWndMain::SmtcOnCommonTick() noexcept
 #endif// VIOLET_WINRT
 }
 
-HRESULT CWndMain::SmtcUpdateTimeLineRange() noexcept
+HRESULT CWindowMain::SmtcUpdateTimeLineRange() noexcept
 {
 #if VIOLET_WINRT
 	using winrt::Windows::Foundation::TimeSpan;
@@ -355,11 +352,11 @@ HRESULT CWndMain::SmtcUpdateTimeLineRange() noexcept
 #endif// VIOLET_WINRT
 }
 
-HRESULT CWndMain::SmtcUpdateTimeLinePosition() noexcept
+HRESULT CWindowMain::SmtcUpdateTimeLinePosition() noexcept
 {
 #if VIOLET_WINRT
 	using winrt::Windows::Foundation::TimeSpan;
-	const auto lfSeconds = App->GetPlayer().GetCurrTime();
+	const auto lfSeconds = App->GetPlayer().GetCurrentTime();
 	const TimeSpan Pos{ std::chrono::milliseconds{ LONGLONG(lfSeconds * 1000.) } };
 	m_SmtcTimeline.Position(Pos);
 	m_Smtc.UpdateTimelineProperties(m_SmtcTimeline);
@@ -369,7 +366,7 @@ HRESULT CWndMain::SmtcUpdateTimeLinePosition() noexcept
 #endif// VIOLET_WINRT
 }
 
-HRESULT CWndMain::SmtcUpdateState() noexcept
+HRESULT CWindowMain::SmtcUpdateState() noexcept
 {
 #if VIOLET_WINRT
 	const auto& Player = App->GetPlayer();
@@ -388,7 +385,7 @@ HRESULT CWndMain::SmtcUpdateState() noexcept
 #endif// VIOLET_WINRT
 }
 
-void CWndMain::SmtcUnInit() noexcept
+void CWindowMain::SmtcUnInit() noexcept
 {
 #if VIOLET_WINRT
 	// 若不取消将导致内存泄漏

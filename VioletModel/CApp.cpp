@@ -53,7 +53,7 @@ constexpr PCWSTR ImgFile[]
 	LR"(Test.jpg)",
 };
 
-static_assert(ARRAYSIZE(ImgFile) == (size_t)GImg::Max);
+static_assert(ARRAYSIZE(ImgFile) == (size_t)AppIcon::Max);
 
 constexpr static D2D1_COLOR_F PalLight[]
 {
@@ -103,7 +103,7 @@ constexpr static D2D1_COLOR_F PalDark[]
 
 CApp* App{};
 
-IWICBitmap* CApp::InvertSkin(IWICBitmap* pBmp)
+IWICBitmapSource* CApp::InvertSkin(IWICBitmapSource* pBmp)
 {
 	constexpr D2D1_RENDER_TARGET_PROPERTIES Prop
 	{
@@ -123,7 +123,7 @@ IWICBitmap* CApp::InvertSkin(IWICBitmap* pBmp)
 	UINT cx, cy;
 
 	pBmp->GetSize(&cx, &cy);
-	eck::g_pWicFactory->CreateBitmap(cx, cy, eck::DefWicPixelFormat,
+	eck::g_pWicFactory->CreateBitmap(cx, cy, eck::DefaultWicPixelFormat,
 		WICBitmapCacheOnLoad, &pNewBitmap);
 	eck::g_pD2DFactory->CreateWicBitmapRenderTarget(pNewBitmap, &Prop, &pRT);
 	pRT->CreateBitmapFromWicBitmap(pBmp, &pD2dBitmap);
@@ -156,15 +156,18 @@ void CApp::LoadSkin(BOOL bLoadAll)
 	auto rsPath{ eck::GetRunningPath() };
 	rsPath.PushBack(LR"(\Skin\)");
 	const auto pszFileName = rsPath.PushBack(48);
-	const auto iEnd = bLoadAll ? ARRAYSIZE(ImgFile) : (size_t)GImg::Priv_InvertEnd;
+	const auto iEnd = bLoadAll ? ARRAYSIZE(ImgFile) : (size_t)AppIcon::Priv_InvertEnd;
 	for (size_t i{}; i < iEnd; ++i)
 	{
 		wcscpy(pszFileName, ImgFile[i]);
 		SafeRelease(m_Img[i]);
-		if (FAILED(eck::CreateWicBitmap(m_Img[i], rsPath.Data())))
+		if (FAILED(eck::WicLoadSource(m_Img[i], rsPath.Data())))
 		{
-            eck::MsgBox(eck::Format(L"缺少资源文件：%s", ImgFile[i]),
-				L"VioletModel", MB_ICONERROR);
+            MessageBoxW(
+				nullptr,
+				eck::Format(L"缺少资源文件：%s", ImgFile[i]).Data(),
+				L"VioletModel",
+				MB_ICONERROR);
 			abort();
 		}
 	}
@@ -172,7 +175,7 @@ void CApp::LoadSkin(BOOL bLoadAll)
 
 CApp::CApp()
 {
-	m_ptcUiThread = eck::GetThreadCtx();
+	m_ptcUiThread = eck::PtcCurrent();
 	EckAssert(m_ptcUiThread);
 	m_ListMgr.LoadList();
 	LoadSkin(TRUE);
@@ -197,7 +200,7 @@ void CApp::SetDarkMode(BOOL bDarkMode)
 		return;
 	m_bDarkMode = bDarkMode;
 	if (m_bDarkMode)
-		for (size_t i{}; i < (size_t)GImg::Priv_InvertEnd; ++i)
+		for (size_t i{}; i < (size_t)AppIcon::Priv_InvertEnd; ++i)
 		{
 			const auto p = InvertSkin(m_Img[i]);
 			m_Img[i]->Release();

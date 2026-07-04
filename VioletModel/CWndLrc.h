@@ -4,11 +4,10 @@
 #include "CVeDtLrc.h"
 
 
-class CWndLrc : public Dui::CDuiWnd, public eck::CFixedTimeLine
+class CWndLrc : public Dui::CDuiWindow, public eck::ITimeLine
 {
 private:
-	Dui::CButton m_BTPrev{}, m_BTPlay{}, m_BTNext{},
-		m_BTLock{}, m_BTClose{};
+	Dui::CButton m_BTPrev{}, m_BTPlay{}, m_BTNext{}, m_BTLock{}, m_BTClose{};
 	eck::CLinearLayoutH m_Layout{};
 	CVeDtLrc m_Lrc{};
 	CVioletTheme* m_pVioletTheme{};
@@ -17,16 +16,17 @@ private:
 	BOOLEAN m_bLock{};
 	BOOLEAN m_bShowBk{ TRUE };
 	BOOLEAN m_bAnFade{};
-	eck::CEasingCurveLite<eck::Easing::FOutCubic> m_AnFade{};
+	eck::EasingCurve<eck::Easing::FOutCubic> m_AnFade{};
 
 	void OnPlayEvent(const PLAY_EVT_PARAM& e);
 public:
-	LRESULT OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
-	LRESULT OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnElementNotify(Dui::CElement* pElem, Dui::ELENMHDR* pnm) noexcept override;
 
-	LRESULT OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e) override;
+	LRESULT OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e) noexcept override;
 
-	void TlTick(int iMs) override;
-	BOOL TlIsValid() override { return m_bAnFade; }
+	void TlTick(int iMs) noexcept override;
+	BOOL TlIsValid() noexcept override { return m_bAnFade; }
+	int TlGetCurrentInterval() noexcept override { return 0; }
 };

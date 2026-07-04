@@ -1,7 +1,7 @@
 ﻿#pragma once
 struct VEN_MINICOVER_CLICK : Dui::DUINMHDR {};
 
-class CVeMiniCover : public Dui::CElem
+class CVeMiniCover : public Dui::CElement
 {
 private:
 	ID2D1Bitmap1
@@ -13,7 +13,7 @@ private:
 
 	void OnColorSchemeChanged(BOOL bForceUpdateCover);
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
 	void SetBitmap(ID2D1Bitmap1* pBmp)
 	{

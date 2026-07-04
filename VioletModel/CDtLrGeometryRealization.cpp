@@ -62,9 +62,9 @@ void CDtLrGeometryRealization::LrDraw(const LDRD_DRAW& Opt)
     else
         switch (m_eAlign[Opt.idxLine])
         {
-        case eck::Align::Near:	dx = 0.f; break;
-        case eck::Align::Center:dx = (m_cxView - e.size.width) / 2.f; break;
-        case eck::Align::Far:	dx = m_cxView - e.size.width; break;
+        case eck::Alignment::Near:	dx = 0.f; break;
+        case eck::Alignment::Center:dx = (m_cxView - e.size.width) / 2.f; break;
+        case eck::Alignment::Far:	dx = m_cxView - e.size.width; break;
         default: ECK_UNREACHABLE;
         }
     const auto y = Opt.idxLine ? m_cyFirstLine + m_cyLinePadding : 0.f;
@@ -89,9 +89,9 @@ void CDtLrGeometryRealization::LrDraw(const LDRD_DRAW& Opt)
         else
             switch (m_eAlign[Opt.idxLine])
             {
-            case eck::Align::Near:	dx = 0.f; break;
-            case eck::Align::Center:dx = (m_cxView - e.sizeTrans.width) / 2.f; break;
-            case eck::Align::Far:	dx = m_cxView - e.sizeTrans.width; break;
+            case eck::Alignment::Near:	dx = 0.f; break;
+            case eck::Alignment::Center:dx = (m_cxView - e.sizeTrans.width) / 2.f; break;
+            case eck::Alignment::Far:	dx = m_cxView - e.sizeTrans.width; break;
             default: ECK_UNREACHABLE;
             }
         DrawTextGeometry(e.pGrSTrans.Get(), e.pGrFTrans.Get(), dx, yNew,
@@ -114,7 +114,7 @@ HRESULT CDtLrGeometryRealization::LrUpdateText(int idx, const Lyric::Line& Line,
         eck::g_pDwFactory->CreateTextLayout(Line.pszLrc, Line.cchLrc,
             m_pTfMain.Get(), m_cxView, m_cyView, e.pLayout.AddrOfClear());
     else
-        eck::g_pDwFactory->CreateTextLayout(EckStrAndLen(L"♪♪♪"),
+        eck::g_pDwFactory->CreateTextLayout(EckArgString(L"♪♪♪"),
             m_pTfMain.Get(), m_cxView, m_cyView, e.pLayout.AddrOfClear());
     DWRITE_TEXT_METRICS tm;
     e.pLayout->GetMetrics(&tm);

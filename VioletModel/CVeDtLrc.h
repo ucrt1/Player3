@@ -1,10 +1,10 @@
 ﻿#pragma once
-struct NM_DTL_GET_TIME : Dui::DUINMHDR
+struct NM_DTL_GET_TIME : Dui::ELENMHDR
 {
     float fTime;
 };
 
-class CVeDtLrc : public Dui::CElem, public eck::CFixedTimeLine
+class CVeDtLrc : public Dui::CElement, public eck::ITimeLine
 {
 public:
     constexpr static int c_InvalidCacheIdx = std::numeric_limits<int>::min();
@@ -24,10 +24,10 @@ private:
     Lyric::CLyric* m_pLrc{};
     int m_idxCurr{ -1 };
 public:
-    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
-    void TlTick(int iMs) override;
-    BOOL TlIsValid() override { return FALSE; }
+    void TlTick(int iMs) noexcept override;
+    BOOL TlIsValid() noexcept override { return FALSE; }
 
     HRESULT LrcSetCurrentLine(int idx);
     void LrcSetEmptyText(std::wstring_view svEmptyText);

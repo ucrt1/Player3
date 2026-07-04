@@ -1,9 +1,9 @@
 ﻿#pragma once
 #include "CVeMiniCover.h"
 
-class CPlayPanel :public Dui::CElem
+class CPlayPanel :public Dui::CElement
 {
-	friend class CWndMain;
+	friend class CWindowMain;
 private:
 	ID2D1SolidColorBrush* m_pBrush{};
 
@@ -14,5 +14,5 @@ private:
 
 	void OnPlayEvent(const PLAY_EVT_PARAM& e);
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 };

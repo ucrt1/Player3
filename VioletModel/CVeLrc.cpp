@@ -20,9 +20,9 @@ void CVeLrc::ScrAnProc(float fPos, float fPrevPos)
     const auto iMs = m_psv->TlGetCurrentInterval();
     if (m_bEnlarging)
     {
-        m_fAnValue = eck::Easing::OutCubic(m_psv->GetCurrTime(),
+        m_fAnValue = eck::Easing::OutCubic(m_psv->GetCurrentTime(),
             1.f, m_pRenderer->GetMaxScale() - 1.f, m_psv->GetDuration());
-        if (m_psv->GetCurrTime() >= m_psv->GetDuration())
+        if (m_psv->GetCurrentTime() >= m_psv->GetDuration())
         {
             m_bEnlarging = FALSE;
             m_idxPrevAnItem = -1;
@@ -51,7 +51,7 @@ void CVeLrc::ScrAnProc(float fPos, float fPrevPos)
     ScrDoItemScroll(fPos);
 
     ItmReCalcTop();
-    InvalidateRect();
+    Invalidate();
 }
 
 void CVeLrc::ItmReCalcTop()
@@ -182,7 +182,7 @@ void CVeLrc::ItmInvalidate(int idx)
 {
     D2D1_RECT_F rc;
     ItmGetRect(idx, rc);
-    InvalidateRect(rc);
+    Invalidate(rc);
 }
 
 void CVeLrc::SeBeginExpand(BOOL bEnlarge)
@@ -197,7 +197,7 @@ void CVeLrc::SeBeginExpand(BOOL bEnlarge)
             m_msScrollExpand = AnDurLrcScrollExpand;
     }
     if (bWake)
-        GetWnd()->WakeRenderThread();
+        GetWnd()->KctWake();
 }
 
 void CVeLrc::ItmDelayPrepare(float dy)
@@ -262,7 +262,7 @@ BOOL CVeLrc::ItmIsDelayEnd(const ITEM& e)
         return e.msDelay >= (msDelay * ((m_yMinMaxDelayPos - e.yAnDelaySrc) / cy));
 }
 
-LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -334,7 +334,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
         ItmDelayComplete();
         ScrManualScrolling();
         m_psv->OnMouseWheel2(-GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
-        GetWnd()->WakeRenderThread();
+        GetWnd()->KctWake();
     }
     return 0;
 
@@ -428,7 +428,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if (!m_vItem[i].bSel)
                 {
                     m_vItem[i].bSel = TRUE;
-                    InvalidateRect();
+                    Invalidate();
                 }
             }
         }
@@ -437,7 +437,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     case WM_NOTIFY:
     {
-        if ((Dui::CElem*)wParam == &m_SB)
+        if ((Dui::CElement*)wParam == &m_SB)
         {
             switch (((Dui::DUINMHDR*)lParam)->uCode)
             {
@@ -449,9 +449,9 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 ItmDelayComplete();
                 ScrManualScrolling();
                 m_psv->InterruptAnimation();
-                ScrDoItemScroll(m_psv->GetPos());
+                ScrDoItemScroll(m_psv->GetPosition());
                 ItmReCalcTop();
-                InvalidateRect();
+                Invalidate();
             }
             return TRUE;
             }
@@ -505,7 +505,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
                     y -= (e.cy + m_cyLinePadding);
                     e.y = e.yNoDelay = y;
                 }
-                m_psv->SetPos(-m_vItem.front().y);
+                m_psv->SetPosition(-m_vItem.front().y);
                 y = CurrItem.yNoDelay + CurrItem.cy + m_cyLinePadding;
                 for (int i = idxCurr + 1; i < (int)m_vItem.size(); ++i)
                 {
@@ -537,7 +537,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
         m_psv = m_SB.GetScrollView();
         m_psv->AddRef();
         m_psv->SetMinThumbSize(Dui::CxyMinScrollThumb);
-        m_psv->SetCallBack([](float fPos, float fPrevPos, LPARAM lParam)
+        m_psv->SetCallback([](float fPos, float fPrevPos, LPARAM lParam)
             {
                 ((CVeLrc*)lParam)->ScrAnProc(fPos, fPrevPos);
             }, (LPARAM)this);
@@ -585,7 +585,7 @@ HRESULT CVeLrc::LrcSetCurrentLine(int idxCurr)
         m_psv->InterruptAnimation();
         m_psv->SmoothScrollDelta(dy);
         ItmDelayPrepare(dy);
-        GetWnd()->WakeRenderThread();
+        GetWnd()->KctWake();
     }
     return S_OK;
 }
@@ -603,7 +603,7 @@ HRESULT CVeLrc::LrcInit(Lyric::CLyric* pLyric)
     if (!IsEmpty())
         ScrFixItemPosition();
     ItmReCalcTop();
-    InvalidateRect();
+    Invalidate();
     return S_OK;
 }
 
@@ -621,7 +621,7 @@ void CVeLrc::LrcClear()
     m_fAnValue = 1.f;
     m_bEnlarging = FALSE;
     m_SB.SetVisible(FALSE);
-    InvalidateRect();
+    Invalidate();
 }
 
 void CVeLrc::SetTextFormatTrans(IDWriteTextFormat* pTf)
@@ -630,7 +630,7 @@ void CVeLrc::SetTextFormatTrans(IDWriteTextFormat* pTf)
     m_pRenderer->SetTextFormatTrans(pTf);
 }
 
-void CVeLrc::TlTick(int iMs)
+void CVeLrc::TlTick(int iMs) noexcept
 {
     BOOL bAn{};
     int i = (m_bDelayScrollUp ? 0 : (int)m_vItem.size() - 1);
@@ -687,7 +687,7 @@ void CVeLrc::TlTick(int iMs)
                 e.y = e.yAnDelaySrc + (e.yAnDelayDst - e.yAnDelaySrc) * k;
                 rc.top = std::min(rc.top, e.y);
                 rc.bottom = std::max(rc.bottom, e.y + e.cy);
-                InvalidateRect(rc);
+                Invalidate(rc);
             }
             else
                 e.msDelay += iMs;
@@ -712,7 +712,7 @@ void CVeLrc::ScrAutoScrolling()
     SeBeginExpand(FALSE);
     if (m_idxCurr >= 0)
         ItmDelayPrepare(dy);
-    GetWnd()->WakeRenderThread();
+    GetWnd()->KctWake();
 }
 
 void CVeLrc::ItmLayout()
@@ -730,7 +730,7 @@ void CVeLrc::ItmLayout()
         return;
     }
     const auto cLrc = m_pLrc->MgGetLineCount();
-    const auto yInit = (float)-m_psv->GetPos();
+    const auto yInit = (float)-m_psv->GetPosition();
     float y = yInit;
     LRD_TEXT_METRICS Metrics;
 
@@ -754,10 +754,10 @@ void CVeLrc::ItmLayout()
 
         switch (m_eAlignH)
         {
-        case eck::Align::Center:
+        case eck::Alignment::Center:
             e.x = (cx - e.cx) / 2.f;
             break;
-        case eck::Align::Far:
+        case eck::Alignment::Far:
             e.x = cx - e.cx;
             break;
         }
@@ -768,8 +768,8 @@ void CVeLrc::ItmLayout()
         y += (e.cy + m_cyLinePadding);
     }
 
-    m_psv->SetMin(-cy / 3.f - m_vItem.front().cy);
-    m_psv->SetMax(y - yInit - m_cyLinePadding + cy / 3.f * 2.f);
+    m_psv->SetMinimum(-cy / 3.f - m_vItem.front().cy);
+    m_psv->SetMaximum(y - yInit - m_cyLinePadding + cy / 3.f * 2.f);
     m_psv->SetPage(cy);
     m_psv->SetViewSize(cy);
     m_SB.SetVisible(m_psv->IsVisible());
@@ -804,10 +804,10 @@ void CVeLrc::ScrFixItemPosition()
 {
     const auto& e = m_vItem.front();
     const auto iRealPos = (int)-e.y;
-    if (iRealPos < m_psv->GetMin())
-        ScrDoItemScroll(m_psv->GetPos());
+    if (iRealPos < m_psv->GetMinimum())
+        ScrDoItemScroll(m_psv->GetPosition());
     else if (iRealPos > m_psv->GetMaxWithPage())
-        ScrDoItemScroll(m_psv->GetPos());
+        ScrDoItemScroll(m_psv->GetPosition());
 }
 
 

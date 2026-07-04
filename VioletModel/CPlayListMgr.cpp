@@ -14,9 +14,9 @@ void CPlayListMgr::LoadList()
         };
     eck::CEnumFile ef{};
     ef.Open(rsPath.Data());
-    ef.Enumerate(FnCallback, EckStrAndLen(L"*.VltList"));
-    ef.Enumerate(FnCallback, EckStrAndLen(L"*.PNList"));
-    ef.Enumerate(FnCallback, EckStrAndLen(L"*.QKList"));
+    ef.Enumerate(FnCallback, L"*.VltList"sv);
+    ef.Enumerate(FnCallback, L"*.PNList"sv);
+    ef.Enumerate(FnCallback, L"*.QKList"sv);
 }
 
 std::shared_ptr<CPlayList> CPlayListMgr::Add()

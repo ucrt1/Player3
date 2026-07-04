@@ -14,9 +14,7 @@
 #include "CVioletTheme.h"
 #include "CWndLrc.h"
 
-class CWndMain final :
-    public Dui::CDuiWnd,
-    public eck::CFixedTimeLine
+class CWindowMain final : public Dui::CDuiWindow, public eck::ITimeLine
 {
     friend class CWndTbGhost;
 public:
@@ -40,26 +38,31 @@ private:
     CPageList m_PageList{};
     CPageEffect m_PageEffect{};
     CPageOptions m_PageOptions{};
-    Dui::CElem m_NormalPageContainer{};// 所有下层页面的父级，动画时用
+    Dui::CElement m_NormalPageContainer{};// 所有下层页面的父级，动画时用
 
     CPagePlaying m_PagePlaying{};
 
     Dui::CTrackBar m_TBProgress{};
 
-    Dui::CCircleButton m_BTPrev{}, m_BTPlay{}, m_BTNext{},
+    Dui::CButton m_BTPrev{}, m_BTPlay{}, m_BTNext{},
         m_BTAutoNext{}, m_BTLrc{}, m_BTVol{};
 
     CVeVolumeBar m_VolBar{};
 
-    ID2D1Bitmap1* m_vBmpRealization[(size_t)GImg::Max]{};
-    ID2D1SolidColorBrush* m_pBrush{};
+    ID2D1Bitmap1* m_vBmpRealization[(size_t)AppIcon::Max]{};
 
     ID2D1Bitmap1* m_pBmpCover{};
 
-    CPage* m_vPage[(size_t)Page::Max]{ &m_PageMain,&m_PageList,&m_PageEffect,&m_PageOptions };
+    CPage* m_vPage[(size_t)Page::Max]
+    {
+        &m_PageMain,
+        &m_PageList,
+        &m_PageEffect,
+        &m_PageOptions
+    };
 
     CPage* m_pAnPage{};
-    eck::CEasingCurve* m_pecPage{};
+    eck::EasingCurve<eck::Easing::FOutCubic> m_ecPage{};
 
     BOOLEAN m_bPageAnUpToDown{};
     Page m_eCurrPage{};
@@ -67,19 +70,17 @@ private:
     BOOLEAN m_bPPAnReverse{};// TRUE = 小到大，FALSE = 大到小
     BOOLEAN m_bPPAnActive{};
     BOOLEAN m_bPPCornerAnActive[4]{};
-    eck::CEasingCurveLite<eck::Easing::FOutExpo> m_PlayPageAn;
-    eck::CEasingCurveLite<eck::Easing::FOutExpo> m_PPCornerAn[4]{};
+    eck::EasingCurve<eck::Easing::FOutExpo> m_PlayPageAn;
+    eck::EasingCurve<eck::Easing::FOutExpo> m_PPCornerAn[4]{};
     D2D1_RECT_F m_rcPPMini{};
     D2D1_RECT_F m_rcPPLarge{};
-    CCompPlayPageAn* m_pCompPlayPageAn{};
+    CCompPlayPageAn m_CompPlayPageAn{};
 
-    Dui::CCompositorPageAn* m_pCompNormalPageAn{};
+    Dui::CCompositor2DAffineTransform m_CompNormalPageAn{};
 
-    eck::THREADCTX* m_ptcUiThread{};
+    eck::ThreadContext* m_ptcUiThread{};
 
-    eck::UniquePtr<eck::DelHIcon>
-        m_hiTbPlay{},
-        m_hiTbPause{};
+    HICON m_hiTbPlay{}, m_hiTbPause{};
     ComPtr<ITaskbarList4> m_pTaskbarList{};
     CWndTbGhost m_WndTbGhost{ *this };
 
@@ -110,6 +111,7 @@ private:
 
     void PpaPrepare();
     void PpaEnd();
+    void PpaTick(int ms) noexcept;
 
     void RePosPalyPanelControl();
 
@@ -140,16 +142,17 @@ private:
     void SmtcUnInit() noexcept;
 public:
     HWND Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
-        int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData = nullptr) override;
+        int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData = nullptr) noexcept override;
 
-    LRESULT OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
-    LRESULT OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+    LRESULT OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept override;
 
-    ID2D1Bitmap1* RealizeImage(GImg n);
+    ID2D1Bitmap1* RealizeImage(AppIcon n);
 
-    void TlTick(int iMs) override;
-    BOOL TlIsValid() override { return 1 || m_bPPAnActive; }
+    void TlTick(int iMs) noexcept override;
+    BOOL TlIsValid() noexcept override { return m_bPPAnActive; }
+    int TlGetCurrentInterval() noexcept override { return 0; }
 
     EckInlineNdCe auto ThreadCtx() const noexcept { return m_ptcUiThread; }
     EckInlineNdCe auto GetVioletTheme() const noexcept { return m_pVioletTheme; }

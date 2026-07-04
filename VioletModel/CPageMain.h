@@ -9,5 +9,5 @@ private:
 
 	eck::CLinearLayoutH m_Lyt{};
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
+	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 };

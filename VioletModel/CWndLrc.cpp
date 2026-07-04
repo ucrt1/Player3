@@ -11,31 +11,31 @@ void CWndLrc::OnPlayEvent(const PLAY_EVT_PARAM& e)
 		break;
 	case PlayEvt::Play:
 	{
-		ComPtr<Lyric::CLyric> pLyric;
-		App->GetPlayer().GetLrc(pLyric.RefOf());
+		Lyric::CLyric pLyric;
+		App->GetPlayer().GetLrc(pLyric());
 		m_Lrc.SetLyric(pLyric.Get());
 	}
 	break;
 	}
 }
 
-LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CWndLrc::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
 	switch (uMsg)
 	{
 	case WM_NCHITTEST:
 	{
 		POINT pt ECK_GET_PT_LPARAM(lParam);
-		ScreenToClient(hWnd, &pt);
-		const auto cxPadded = eck::DaGetSystemMetrics(SM_CXPADDEDBORDER, GetDpiValue());
-		const auto cxFrame = eck::DaGetSystemMetrics(SM_CXFRAME, GetDpiValue()) + cxPadded;
-		const auto cyFrame = eck::DaGetSystemMetrics(SM_CYFRAME, GetDpiValue()) + cxPadded;
+		ScreenToClient(Handle, &pt);
+		const auto cxPadded = eck::DaGetSystemMetrics(SM_CXPADDEDBORDER, GetWindowDpi());
+		const auto cxFrame = eck::DaGetSystemMetrics(SM_CXFRAME, GetWindowDpi()) + cxPadded;
+		const auto cyFrame = eck::DaGetSystemMetrics(SM_CYFRAME, GetWindowDpi()) + cxPadded;
 		const MARGINS m{ cxFrame,cyFrame,cxFrame,cyFrame };
 		auto lResult = eck::MsgOnNcHitTest(pt, m, GetClientWidth(), GetClientHeight());
 		if (lResult == HTCAPTION)
 		{
-			lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
-			if (!GetCurrNcHitElem() || GetCurrNcHitElem() == &m_Lrc)
+			lResult = __super::OnMessage(uMsg, wParam, lParam);
+			if (!EtCurrentNcHitTest() || EtCurrentNcHitTest() == &m_Lrc)
 				lResult = HTCAPTION;
 		}
 		return lResult;
@@ -44,29 +44,28 @@ LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEMOVE:
 	case WM_NCMOUSEMOVE:
 	{
-		ECK_DUILOCKWND;
 		if (m_bShowBk)
 			break;
 		m_bShowBk = TRUE;
 		m_AnFade.Start(0.0f, 1.0f, m_bAnFade);
 		m_bAnFade = TRUE;
-		SetTimer(hWnd, IDT_LRC_MOUSELEAVE, TE_LRC_MOUSELEAVE, nullptr);
-		WakeRenderThread();
+		SetTimer(Handle, IDT_LRC_MOUSELEAVE, TE_LRC_MOUSELEAVE, nullptr);
+		KctWake();
 	}
 	break;
 	case WM_SIZE:
 	{
-		const auto lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
+		const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
 		const auto cxLyt = m_Layout.LoGetSize().cx;
 		m_Layout.Arrange(
-			int((GetClientWidthLog() - cxLyt) / 2),
-			(int)CxyLrcPadding,
-			(int)cxLyt, (int)CxyLrcBtn);
+			(GetClientWidthLogical() - cxLyt) / 2,
+			CxyLrcPadding,
+			cxLyt, CxyLrcBtn);
 		m_Lrc.SetRect({
 			CxyLrcPadding,
-			float(m_Layout.LoGetPos().y + m_Layout.LoGetSize().cy + CxyLrcPadding),
-			GetClientWidthLog() - CxyLrcPadding,
-			GetClientHeightLog() - CxyLrcPadding });
+			float(m_Layout.LoGetPosition().y + m_Layout.LoGetSize().cy + CxyLrcPadding),
+			GetClientWidthLogical() - CxyLrcPadding,
+			GetClientHeightLogical() - CxyLrcPadding });
 		return lResult;
 	}
 	break;
@@ -76,20 +75,19 @@ LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case IDT_LRC_MOUSELEAVE:
 		{
-			if (GetCapture() == hWnd)
+			if (GetCapture() == Handle)
 				return 0;
 			RECT rc;
-			GetWindowRect(hWnd, &rc);
+			GetWindowRect(Handle, &rc);
 			POINT pt;
 			GetCursorPos(&pt);
 			if (!PtInRect(&rc, pt))
 			{
-				ECK_DUILOCKWND;
 				m_bShowBk = FALSE;
-				KillTimer(hWnd, IDT_LRC_MOUSELEAVE);
+				KillTimer(Handle, IDT_LRC_MOUSELEAVE);
 				m_AnFade.Start(1.0f, 0.0f, m_bAnFade);
 				m_bAnFade = TRUE;
-				WakeRenderThread();
+				KctWake();
 			}
 		}
 		return 0;
@@ -99,47 +97,47 @@ LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_SHOWWINDOW:
 	{
 		if (m_bInitShow)
-			SetTimer(hWnd, IDT_LRC_MOUSELEAVE, TE_LRC_MOUSELEAVE, nullptr);
+			SetTimer(Handle, IDT_LRC_MOUSELEAVE, TE_LRC_MOUSELEAVE, nullptr);
 	}
 	break;
 	case WM_CREATE:
 	{
-		const auto lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
+		const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
 
 		App->GetPlayer().GetSignal().Connect(this, &CWndLrc::OnPlayEvent);
-		RegisterTimeLine(this);
+		KctRegisterTimeLine(this);
 
 		m_pVioletTheme = new CVioletTheme{};
 		StRegisterAutoTheme(m_pVioletTheme);
 
-		constexpr MARGINS Mar{ .cxRightWidth = (int)CxyLrcPadding };
+		constexpr eck::LYTMARGINS Mar{ .r = CxyLrcPadding };
 		m_BTPrev.Create(nullptr, Dui::DES_VISIBLE, 0,
 			0, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTPrev.SetBitmap(App->GetMainWindow().RealizeImage(GImg::PrevSolid));
+		m_BTPrev.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::PrevSolid));
 		m_BTPrev.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTPrev, Mar, eck::LF_FIX);
 
 		m_BTPlay.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTPlay.SetBitmap(App->GetMainWindow().RealizeImage(GImg::TriangleSolid));
+		m_BTPlay.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::TriangleSolid));
 		m_BTPlay.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTPlay, Mar, eck::LF_FIX);
 
 		m_BTNext.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 2, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTNext.SetBitmap(App->GetMainWindow().RealizeImage(GImg::NextSolid));
+		m_BTNext.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::NextSolid));
 		m_BTNext.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTNext, Mar, eck::LF_FIX);
 
 		m_BTLock.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 3, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTLock.SetBitmap(App->GetMainWindow().RealizeImage(GImg::LockSolid));
+		m_BTLock.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::LockSolid));
 		m_BTLock.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTLock, Mar, eck::LF_FIX);
 
 		m_BTClose.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 4, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTClose.SetBitmap(App->GetMainWindow().RealizeImage(GImg::CrossSolid));
+		m_BTClose.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::CrossSolid));
 		m_BTClose.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTClose, {}, eck::LF_FIX);
 
@@ -148,11 +146,11 @@ LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		ComPtr<IDWriteTextFormat> pTfLrc;
 		auto& FontFactory = App->GetFontFactory();;
 		FontFactory.NewFont(pTfLrc.RefOfClear(),
-			eck::Align::Near, eck::Align::Near, 30, 700);
+			eck::Alignment::Near, eck::Alignment::Near, 30, 700);
 		pTfLrc->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		m_Lrc.SetTextFormat(pTfLrc.Get());
 		FontFactory.NewFont(pTfLrc.RefOfClear(),
-			eck::Align::Near, eck::Align::Near, 20, 500);
+			eck::Alignment::Near, eck::Alignment::Near, 20, 500);
 		pTfLrc->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 		m_Lrc.SetTextFormatTrans(pTfLrc.Get());
 		m_Lrc.LrcSetEmptyText(L"VioletModel - VC++/Win32"sv);
@@ -162,24 +160,23 @@ LRESULT CWndLrc::OnMsg(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	break;
 	case WM_DESTROY:
 	{
-		const auto lResult = __super::OnMsg(hWnd, uMsg, wParam, lParam);
+		const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
 		SafeRelease(m_pVioletTheme);
 		return lResult;
 	}
 	break;
 	}
-	return __super::OnMsg(hWnd, uMsg, wParam, lParam);
+	return __super::OnMessage(uMsg, wParam, lParam);
 }
 
-LRESULT CWndLrc::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CWndLrc::OnElementNotify(Dui::CElement* pElem, Dui::ELENMHDR* pnm) noexcept
 {
-	const auto* const pnm = (Dui::DUINMHDR*)lParam;
 	if (pElem == &m_Lrc)
-		switch (pnm->uCode)
+		switch (pnm->uNotify)
 		{
 		case ELEN_DTLRC_GET_TIME:
 		{
-			const auto p = (NM_DTL_GET_TIME*)lParam;
+			const auto p = (NM_DTL_GET_TIME*)pnm;
 			p->fTime = (float)App->GetPlayer().GetBass().GetPosition();
 		}
 		return 0;
@@ -194,10 +191,10 @@ LRESULT CWndLrc::OnElemEvent(Dui::CElem* pElem, UINT uMsg, WPARAM wParam, LPARAM
 	//	;
 	//else if (pElem == &m_BTClose)
 	//	;
-	return __super::OnElemEvent(pElem, uMsg, wParam, lParam);
+	return __super::OnElementNotify(pElem, pnm);
 }
 
-LRESULT CWndLrc::OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e)
+LRESULT CWndLrc::OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e) noexcept
 {
 	if (uMsg == Dui::RE_FILLBACKGROUND)
 	{
@@ -214,7 +211,7 @@ LRESULT CWndLrc::OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e)
 	return __super::OnRenderEvent(uMsg, e);
 }
 
-void CWndLrc::TlTick(int iMs)
+void CWndLrc::TlTick(int iMs) noexcept
 {
 	if (m_bAnFade)
 	{

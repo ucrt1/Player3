@@ -3,7 +3,7 @@
 #include "CApp.h"
 
 
-LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -77,7 +77,7 @@ LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return __super::OnEvent(uMsg, wParam, lParam);
 }
 
-void CVeDtLrc::TlTick(int iMs)
+void CVeDtLrc::TlTick(int iMs) noexcept
 {
 
 }
@@ -88,7 +88,7 @@ HRESULT CVeDtLrc::LrcSetCurrentLine(int idx)
         return S_FALSE;
     m_idxCurr = idx;
     //InvalidateCache();
-    InvalidateRect();
+    Invalidate();
     return S_OK;
 }
 
