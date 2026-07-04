@@ -2,7 +2,7 @@
 #include "CPlayer.h"
 #include "CPlayListMgr.h"
 
-enum class AppIcon
+enum class AppImage
 {
     About,
     Add,
@@ -184,7 +184,10 @@ class CWindowMain;
 class CApp
 {
 private:
-    IWICBitmapSource* m_Img[(size_t)AppIcon::Max]{};
+    ComPtr<IWICBitmapSource> m_pImage[(size_t)AppImage::Max]{};
+
+
+
     BOOL m_bDarkMode{};
     CPlayer m_Player{};
     CPlayListMgr m_ListMgr{};
@@ -198,18 +201,16 @@ private:
 public:
     CApp();
 
-    ~CApp();
-
     static void Init();
 
     const D2D1_COLOR_F& GetColor(GPal n) const;
 
-    EckInlineNdCe IWICBitmapSource* GetImg(AppIcon n) const { return m_Img[size_t(n)]; }
+    EckInlineNdCe auto& GetImage(AppImage n) const noexcept { return m_pImage[size_t(n)]; }
 
     void SetDarkMode(BOOL bDarkMode);
 
-    EckInlineNdCe auto& GetPlayer() { return m_Player; }
-    EckInlineNdCe auto& GetListMgr() { return m_ListMgr; }
+    EckInlineNdCe auto& Player() { return m_Player; }
+    EckInlineNdCe auto& ListManager() { return m_ListMgr; }
     EckInlineNdCe auto& GetFontFactory() { return m_FontFactory; }
     EckInlineNdCe auto& GetMainWindow() { return *m_pWndMain; }
 

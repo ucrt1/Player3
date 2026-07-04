@@ -49,7 +49,7 @@ private:
 
     CVeVolumeBar m_VolBar{};
 
-    ID2D1Bitmap1* m_vBmpRealization[(size_t)AppIcon::Max]{};
+    ID2D1Bitmap1* m_vBmpRealization[(size_t)AppImage::Max]{};
 
     ID2D1Bitmap1* m_pBmpCover{};
 
@@ -146,7 +146,8 @@ public:
 
     LRESULT OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept override;
 
-    ID2D1Bitmap1* RealizeImage(AppIcon n);
+    ID2D1Bitmap1* RealizeImage(AppImage n);
+    Dui::CBitmap RealizeImage2(AppImage n);
 
     void TlTick(int iMs) noexcept override;
     BOOL TlIsValid() noexcept override { return m_bPPAnActive; }

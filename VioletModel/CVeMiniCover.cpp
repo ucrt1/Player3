@@ -6,18 +6,18 @@ constexpr static float CoverAnEndValue = 6.f;
 
 void CVeMiniCover::OnColorSchemeChanged(BOOL bForceUpdateCover)
 {
-	if (App->GetPlayer().IsDefaultCover() ||
+	if (App->Player().IsDefaultCover() ||
 		bForceUpdateCover)
 	{
 		if (m_pBmp)
 			m_pBmp->Release();
-		m_pBmp = ((CWindowMain*)GetWnd())->RealizeImage(AppIcon::DefaultCover);
+		m_pBmp = ((CWindowMain*)GetWnd())->RealizeImage(AppImage::DefaultCover);
 		m_pBmp->AddRef();
 	}
 
 	if (m_pBmpCoverUp)
 		m_pBmpCoverUp->Release();
-	m_pBmpCoverUp = ((CWindowMain*)GetWnd())->RealizeImage(AppIcon::PlayPageUp);
+	m_pBmpCoverUp = ((CWindowMain*)GetWnd())->RealizeImage(AppImage::PlayPageUp);
 	m_pBmpCoverUp->AddRef();
 }
 
@@ -38,10 +38,10 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 			eck::InflateRect(rcView, fValue, fValue);
 			m_pDC->DrawBitmap(m_pBmp, rcView);
 			m_pDC->Flush();
-			GetWnd()->CacheReserveLogSize(GetWidthF(), GetHeightF());
+			GetWindow().CacheReserveLogSize(GetWidth(), GetHeight());
 			auto rcInTarget{ GetRectInClientF() };
 			eck::OffsetRect(rcInTarget, ps.ox, ps.oy);
-			GetWnd()->BlurDrawDC(rcInTarget, {}, fValue);
+			GetWindow().BlurDrawDC(rcInTarget, {}, fValue);
 
 			rcView = GetViewRectF();
 			rcView.left = (rcView.right - (float)CxyPlayPageArrow) / 2;
@@ -72,7 +72,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 		{
 			m_bHover = TRUE;
 			m_pec->Begin(0.f, CoverAnEndValue);
-			GetWnd()->KctWake();
+			GetWindow().KctWake();
 		}
 	}
 	return 0;
@@ -82,7 +82,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 		{
 			m_bHover = FALSE;
 			m_pec->Begin(CoverAnEndValue, 0.f);
-			GetWnd()->KctWake();
+			GetWindow().KctWake();
 		}
 	}
 	return 0;

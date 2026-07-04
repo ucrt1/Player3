@@ -4,7 +4,7 @@
 
 void CTabPanel::OnColorSchemeChanged()
 {
-    m_LAIcon.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::WindowLogo));
+    m_LAIcon.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppImage::WindowLogo));
 }
 
 LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
@@ -26,27 +26,27 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 case 0:
                     p->pszText = L"主页";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(AppIcon::Home);
+                    p->pImage = pWnd->RealizeImage(AppImage::Home);
                     break;
                 case 1:
                     p->pszText = L"列表";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(AppIcon::List);
+                    p->pImage = pWnd->RealizeImage(AppImage::List);
                     break;
                 case 2:
                     p->pszText = L"效果";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(AppIcon::Effect);
+                    p->pImage = pWnd->RealizeImage(AppImage::Effect);
                     break;
                 case 3:
                     p->pszText = L"设置";
                     p->cchText = 2;
-                    p->pImage = pWnd->RealizeImage(AppIcon::Settings);
+                    p->pImage = pWnd->RealizeImage(AppImage::Settings);
                     break;
                 default:
                     p->pszText = L"...";
                     p->cchText = 3;
-                    p->pImage = pWnd->RealizeImage(AppIcon::SmallLogo);
+                    p->pImage = pWnd->RealizeImage(AppImage::SmallLogo);
                 }
             }
             return 0;
@@ -76,7 +76,7 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     case WM_SIZE:
     {
         D2D1_RECT_F rc;
-        rc.left = (GetWidthF() - CxyWndLogo) / 2.f;
+        rc.left = (GetWidth() - CxyWndLogo) / 2.f;
         rc.top = rc.left + CxyWndLogo / 3.f;
         rc.right = rc.left + CxyWndLogo;
         rc.bottom = rc.top + CxyWndLogo;
@@ -86,8 +86,8 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         m_TAB.SetRect({
             Padding,
             rc.bottom + DWndLogoToTab,
-            GetWidthF() - Padding,
-            GetHeightF() - Padding });
+            GetWidth() - Padding,
+            GetHeight() - Padding });
     }
     break;
 
@@ -98,7 +98,7 @@ LRESULT CTabPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     case WM_CREATE:
         m_pDC->CreateSolidColorBrush({}, &m_pBrush);
         m_LAIcon.Create(nullptr, Dui::DES_VISIBLE, 0,
-            0, 0, GetWidthF(), GetWidthF(), this, GetWnd());
+            0, 0, GetWidth(), GetWidth(), this, GetWnd());
         m_LAIcon.SetOnlyBitmap(TRUE);
         m_LAIcon.SetBackgroundMode(eck::BkImgMode::StretchKeepAspectRatio);
         m_LAIcon.SetFullElem(TRUE);

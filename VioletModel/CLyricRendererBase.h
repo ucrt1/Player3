@@ -32,7 +32,7 @@ struct LRD_EMTRY_TEXT
     std::wstring_view svText;
 };
 
-class CLyricRendererBase : public eck::CRefObj<CLyricRendererBase>
+class CLyricRendererBase : public eck::CReferenceCounted
 {
 public:
     enum : size_t

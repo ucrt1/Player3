@@ -53,7 +53,7 @@ constexpr PCWSTR ImgFile[]
 	LR"(Test.jpg)",
 };
 
-static_assert(ARRAYSIZE(ImgFile) == (size_t)AppIcon::Max);
+static_assert(ARRAYSIZE(ImgFile) == (size_t)AppImage::Max);
 
 constexpr static D2D1_COLOR_F PalLight[]
 {
@@ -108,7 +108,7 @@ IWICBitmapSource* CApp::InvertSkin(IWICBitmapSource* pBmp)
 	constexpr D2D1_RENDER_TARGET_PROPERTIES Prop
 	{
 		D2D1_RENDER_TARGET_TYPE_DEFAULT,
-		{ DXGI_FORMAT_B8G8R8A8_UNORM,D2D1_ALPHA_MODE_PREMULTIPLIED },
+		{ DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED },
 		96.f,96.f,
 		D2D1_RENDER_TARGET_USAGE_NONE,
 		D2D1_FEATURE_LEVEL_DEFAULT
@@ -156,12 +156,11 @@ void CApp::LoadSkin(BOOL bLoadAll)
 	auto rsPath{ eck::GetRunningPath() };
 	rsPath.PushBack(LR"(\Skin\)");
 	const auto pszFileName = rsPath.PushBack(48);
-	const auto iEnd = bLoadAll ? ARRAYSIZE(ImgFile) : (size_t)AppIcon::Priv_InvertEnd;
+	const auto iEnd = bLoadAll ? ARRAYSIZE(ImgFile) : (size_t)AppImage::Priv_InvertEnd;
 	for (size_t i{}; i < iEnd; ++i)
 	{
 		wcscpy(pszFileName, ImgFile[i]);
-		SafeRelease(m_Img[i]);
-		if (FAILED(eck::WicLoadSource(m_Img[i], rsPath.Data())))
+		if (FAILED(eck::WicLoadSource(m_pImage[i].AtSelfClear(), rsPath.Data())))
 		{
             MessageBoxW(
 				nullptr,
@@ -181,12 +180,6 @@ CApp::CApp()
 	LoadSkin(TRUE);
 }
 
-CApp::~CApp()
-{
-	for (auto& e : m_Img)
-		SafeRelease(e);
-}
-
 void CApp::Init() {}
 
 const D2D1_COLOR_F& CApp::GetColor(GPal n) const
@@ -200,12 +193,8 @@ void CApp::SetDarkMode(BOOL bDarkMode)
 		return;
 	m_bDarkMode = bDarkMode;
 	if (m_bDarkMode)
-		for (size_t i{}; i < (size_t)AppIcon::Priv_InvertEnd; ++i)
-		{
-			const auto p = InvertSkin(m_Img[i]);
-			m_Img[i]->Release();
-			m_Img[i] = p;
-		}
+		for (size_t i{}; i < (size_t)AppImage::Priv_InvertEnd; ++i)
+			m_pImage[i] = InvertSkin(m_pImage[i].Get());
 	else
 		LoadSkin(FALSE);
 }

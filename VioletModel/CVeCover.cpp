@@ -18,8 +18,8 @@ LRESULT CVeCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             const float cx0 = size.width, cy0 = size.height;
             D2D1_RECT_F rcF;
 
-            const float cxElem = GetWidthF();
-            const float cyElem = GetHeightF();
+            const float cxElem = GetWidth();
+            const float cyElem = GetHeight();
 
             if (cxElem / cyElem > cx0 / cy0)// y对齐
             {

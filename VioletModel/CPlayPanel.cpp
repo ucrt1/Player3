@@ -8,7 +8,7 @@ void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
     {
     case PlayEvt::CommTick:
     {
-        const auto& Player = App->GetPlayer();
+        const auto& Player = App->Player();
         const auto lfCurrTime = Player.GetCurrentTime();
         const auto lfTotalTime = Player.GetTotalTime();
         m_LATime.SetText(eck::Format(L"%02d:%02d/%02d:%02d",
@@ -19,7 +19,7 @@ void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
     break;
     case PlayEvt::Play:
     {
-        const auto& mi = App->GetPlayer().GetMusicInfo();
+        const auto& mi = App->Player().GetMusicInfo();
         m_LATitle.SetText(mi.rsTitle.Data());
         m_LAArtist.SetText(mi.slArtist.FrontData());
     }
@@ -61,7 +61,7 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_CREATE:
     {
-        App->GetPlayer().GetSignal().Connect(this, &CPlayPanel::OnPlayEvent);
+        App->Player().GetSignal().Connect(this, &CPlayPanel::OnPlayEvent);
         m_pDC->CreateSolidColorBrush({}, &m_pBrush);
         const auto pWnd = (CWindowMain*)GetWnd();
 

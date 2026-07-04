@@ -7,14 +7,14 @@
 void CPagePlaying::UpdateBlurredCover()
 {
 	ECK_DUILOCK;
-	const auto cxElem = Log2PhyF(GetWidthF());
-	const auto cyElem = Log2PhyF(GetHeightF());
+	const auto cxElem = Log2PhyF(GetWidth());
+	const auto cyElem = Log2PhyF(GetHeight());
 	if (!cxElem || !cyElem)
 		return;
 	ComPtr<IWICBitmap> pWicCover;
-	App->GetPlayer().GetCover(pWicCover.RefOf());
+	App->Player().GetCover(pWicCover.RefOf());
 	if (!pWicCover.Get())
-		pWicCover = App->GetImg(AppIcon::DefaultCover);
+		pWicCover = App->GetImage(AppImage::DefaultCover);
 	ComPtr<ID2D1Image> pOldTarget;
 	m_pDC->GetTarget(&pOldTarget);
 	m_pDC->SetTarget(m_pBmpBlurredCover);
@@ -58,7 +58,7 @@ void CPagePlaying::UpdateBlurredCover()
 	pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
 	pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION,
 		D2D1_GAUSSIANBLUR_OPTIMIZATION_SPEED);
-	GetWnd()->Phy2Log(pt);
+	GetWindow().Phy2Log(pt);
 	m_pDC->DrawImage(pEffect.Get(), pt);
 	//---半透明遮罩
 	m_pBrBkg->SetColor(App->GetColor(GPal::PlayPageOverlay));
@@ -74,20 +74,20 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
 	{
 	case PlayEvt::CommTick:
 	{
-		m_Lrc.LrcSetCurrentLine(App->GetPlayer().GetCurrLrcIdx());
+		m_Lrc.LrcSetCurrentLine(App->Player().GetCurrLrcIdx());
 	}
 	break;
 	case PlayEvt::Play:
 	{
 		UpdateBlurredCover();
 		Invalidate();
-		const auto& mi = App->GetPlayer().GetMusicInfo();
+		const auto& mi = App->Player().GetMusicInfo();
 		m_LATitle.SetText(mi.rsTitle.Data());
 		m_LAAlbum.SetText(mi.rsAlbum.Data());
 		m_LAArtist.SetText(mi.slArtist.FrontData());
 
 		ComPtr<Lyric::CLyric> pLyric;
-		App->GetPlayer().GetLrc(pLyric.RefOf());
+		App->Player().GetLrc(pLyric.RefOf());
 		m_Lrc.LrcInit(pLyric.Get());
 	}
 	break;
@@ -120,7 +120,7 @@ void CPagePlaying::OnColorSchemeChanged()
 	m_LAArtist.SetColor(crText);
 	m_LAArtist.UpdateFadeColor();
 
-	m_BTBack.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppIcon::PlayPageDown));
+	m_BTBack.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppImage::PlayPageDown));
 
 	const D2D1_COLOR_F crLrc[CVeLrc::CriMax]
 	{
@@ -146,8 +146,8 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
 	case WM_SIZE:
 	{
-		const auto cxF = GetWidthF();
-		const auto cyF = GetHeightF();
+		const auto cxF = GetWidth();
+		const auto cyF = GetHeight();
 		if (m_pBmpBlurredCover)
 		{
 			const auto size = m_pBmpBlurredCover->GetSize();
@@ -155,14 +155,14 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 				size.height < cyF || size.height / 2.f > cyF))
 				goto Update;
 			SafeRelease(m_pBmpBlurredCover);
-			GetWnd()->BmpNewLogSize(cxF, cyF, m_pBmpBlurredCover);
+			GetWindow().BmpNewLogSize(cxF, cyF, m_pBmpBlurredCover);
 		}
 		else
-			GetWnd()->BmpNewLogSize(cxF, cyF, m_pBmpBlurredCover);
+			GetWindow().BmpNewLogSize(cxF, cyF, m_pBmpBlurredCover);
 	Update:;
 		UpdateBlurredCover();
-		const auto cx = GetWidthF();
-		const auto cy = GetHeightF();
+		const auto cx = GetWidth();
+		const auto cy = GetHeight();
 		const auto cxMinGap = cx * 1.f / 20.f;
 		const D2D1_RECT_F rcLrc{ cx * 10.f / 20.f,DLrcTop, cx * 18.f / 20.f, cy - DLrcBottom };
 		m_Lrc.SetRect(rcLrc);
@@ -199,10 +199,10 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	break;
 	case WM_DPICHANGED:
 	{
-		const auto cx = GetWidthF();
-		const auto cy = GetHeightF();
+		const auto cx = GetWidth();
+		const auto cy = GetHeight();
 		SafeRelease(m_pBmpBlurredCover);
-		GetWnd()->BmpNewLogSize(cx, cy, m_pBmpBlurredCover);
+		GetWindow().BmpNewLogSize(cx, cy, m_pBmpBlurredCover);
 		UpdateBlurredCover();
 	}
 	break;
@@ -232,7 +232,7 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	break;
 	case WM_CREATE:
 	{
-		App->GetPlayer().GetSignal().Connect(this, &CPagePlaying::OnPlayEvent);
+		App->Player().GetSignal().Connect(this, &CPagePlaying::OnPlayEvent);
 
 		m_Cover.Create(nullptr, Dui::DES_VISIBLE, 0,
 			50, 50, 200, 200, this);

@@ -59,6 +59,7 @@ using eck::RefPtr;
 namespace Dui = eck::Dui;
 namespace Tag = eck::MediaTag;
 namespace Lyric = eck::Lyric;
+namespace Kw = eck::Kw;
 using namespace std::literals;
 
 #include "Bass\bass.h"

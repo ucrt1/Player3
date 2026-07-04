@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "CLyricRendererBase.h"
 
-class CVeLrc : public Dui::CElement, public eck::CFixedTimeLine
+class CVeLrc : public Dui::CElement, public eck::ITimeLine
 {
     // Isb = Item Select Background
     // Mi = Mouse Idle
@@ -49,7 +49,7 @@ private:
 
     CLyricRendererBase* m_pRenderer{};
 
-    Lyric::CLyric* m_pLrc{};
+    RefPtr<Lyric::CLyric> m_pLrc{};
     std::vector<ITEM> m_vItem{};
     int m_idxTop{ -1 };
     int m_idxHot{ -1 };
@@ -91,7 +91,7 @@ private:
     int ItmIndexFromY(float y);
     void ItmLayout();
     // 取当前项目中线应该在的坐标
-    EckInlineNdCe float ItmGetCurrentItemTarget() const { return GetHeightF() / 3.f; }
+    EckInlineNdCe float ItmGetCurrentItemTarget() const { return GetHeight() / 3.f; }
 
     void ItmInvalidate(int idx);
 
@@ -105,7 +105,7 @@ private:
         if (!m_bAnSelBkg)
         {
             m_bAnSelBkg = TRUE;
-            GetWnd()->KctWake();
+            GetWindow().KctWake();
         }
     }
 
@@ -130,7 +130,7 @@ public:
     // 仅在创建控件前调用一次
     void LrcSetRenderer(CLyricRendererBase* pRenderer)
     {
-        EckAssert(!CElem::IsValid() && !m_pRenderer);
+        EckAssert(!CElement::IsValid() && !m_pRenderer);
         m_pRenderer = pRenderer;
         m_pRenderer->AddRef();
     }
@@ -140,7 +140,7 @@ public:
     // 调用方启动定时器检查当前时间对应的歌词行，每次检查后将结果传递到此方法
     HRESULT LrcSetCurrentLine(int idxCurr);
 
-    HRESULT LrcInit(Lyric::CLyric* pLyric);
+    HRESULT LrcInit(RefPtr<Lyric::CLyric> pLyric);
 
     void LrcClear();
 

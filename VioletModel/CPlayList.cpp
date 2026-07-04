@@ -29,7 +29,7 @@ void CPlayList::ImEnsureLoaded()
 
 BOOL CPlayList::PlyIsSelected() noexcept
 {
-	return App->GetPlayer().GetList() == this;
+	return App->Player().GetList() == this;
 }
 
 HRESULT CPlayList::InitFromListFile(PCWSTR pszFile)

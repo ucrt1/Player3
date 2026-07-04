@@ -34,7 +34,7 @@ LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                   const D2D1_RECT_F rcOld = p->GetWholeRectInClient();
                 p->CompReCalcCompositedRect();
                 p->Invalidate(FALSE);
-                p->GetWnd()->IrUnion(rcOld);
+                p->GetWindow().IrUnion(rcOld);
                 if (p->m_ecShowing.IsStop())
                 {
                     p->SetCompositor(nullptr);
@@ -46,8 +46,8 @@ LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         m_PageAn.InitAsTranslationOpacity();
 
         m_pDC->CreateSolidColorBrush({}, &m_pBrush);
-        const auto cx = GetWidthF();
-        const auto cy = GetHeightF();
+        const auto cx = GetWidth();
+        const auto cy = GetHeight();
         m_LAVol.Create(L"100", Dui::DES_VISIBLE | Dui::DES_PARENT_COMP, 0,
             CxVolBarPadding, 0, CxVolLabel, cy, this);
         const auto x = CxVolBarPadding * 2 + CxVolLabel;
@@ -61,7 +61,7 @@ LRESULT CVeVolumeBar::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     }
     break;
     case WM_DESTROY:
-        GetWnd()->UnregisterTimeLine(&m_ecShowing);
+        GetWindow().UnregisterTimeLine(&m_ecShowing);
         SafeRelease(m_pBrush);
         break;
     }
@@ -78,7 +78,7 @@ void CVeVolumeBar::ShowAnimation()
         m_ecShowing.Begin(0.f, 1.f);
     else
         m_ecShowing.Begin(1.f, 0.f);
-    GetWnd()->KctWake();
+    GetWindow().KctWake();
 }
 
 void CVeVolumeBar::OnVolumeChanged(float fVol)

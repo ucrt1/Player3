@@ -42,7 +42,7 @@ LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     return 0;
     case WM_CREATE:
     {
-        //GetWnd()->RegisterTimeLine(this);
+        //GetWindow().RegisterTimeLine(this);
 
         //m_pDC->QueryInterface(&m_pDC1);
         //InvalidateCache();

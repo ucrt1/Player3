@@ -86,7 +86,7 @@ int CVeLrc::ItmHitTest(POINT pt)
         ItmGetRect(i, rc);
         if (eck::PtInRect(rc, pt))
             return i;
-        if (rc.top > GetHeightF())
+        if (rc.top > GetHeight())
             break;
     }
     return -1;
@@ -197,7 +197,7 @@ void CVeLrc::SeBeginExpand(BOOL bEnlarge)
             m_msScrollExpand = AnDurLrcScrollExpand;
     }
     if (bWake)
-        GetWnd()->KctWake();
+        GetWindow().KctWake();
 }
 
 void CVeLrc::ItmDelayPrepare(float dy)
@@ -236,7 +236,7 @@ void CVeLrc::ItmDelayPrepare(float dy)
         e.yAnDelaySrc = e.y;
         e.msDelay = e.msAnDelay = 0.f;
         y += (e.cy + m_cyLinePadding);
-        if (y >= GetHeightF())
+        if (y >= GetHeight())
         {
             m_idxDelayEnd = i;
             if (!m_bDelayScrollUp)
@@ -254,7 +254,7 @@ void CVeLrc::ItmDelayComplete()
 
 BOOL CVeLrc::ItmIsDelayEnd(const ITEM& e)
 {
-    const auto cy = GetHeightF();
+    const auto cy = GetHeight();
     const auto msDelay = DurMaxItemDelay * ((m_idxDelayEnd - m_idxDelayBegin + 1) / 10.f);
     if (m_bDelayScrollUp)
         return e.msDelay >= (msDelay * ((e.yAnDelaySrc - m_yMinMaxDelayPos) / cy));
@@ -268,23 +268,22 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_PAINT:
     {
-        Dui::ELEMPAINTSTRU ps;
+        Dui::PAINTINFO ps;
         BeginPaint(ps, wParam, lParam);
         m_pRenderer->LrBeginDraw();
         for (int i = m_idxTop; i < (int)m_vItem.size(); ++i)
         {
-            if (ItmPaint(i) > GetHeightF())
+            if (ItmPaint(i) > GetHeight())
                 break;
         }
         m_pRenderer->LrEndDraw();
-        ECK_DUI_DBG_DRAW_FRAME;
+        DbgDrawFrame();
         EndPaint(ps);
     }
     return 0;
 
     case WM_MOUSEMOVE:
     {
-        ECK_DUILOCK;
         if (m_vItem.empty())
             break;
         const POINT pt ECK_GET_PT_LPARAM(lParam);
@@ -308,7 +307,6 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_MOUSELEAVE:
     {
-        ECK_DUILOCK;
         if (m_vItem.empty())
             break;
         int idx = -1;
@@ -326,7 +324,6 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_MOUSEWHEEL:
     {
-        ECK_DUILOCK;
         if (m_vItem.empty())
             break;
         if (!MiIsManualScroll())
@@ -334,13 +331,12 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         ItmDelayComplete();
         ScrManualScrolling();
         m_psv->OnMouseWheel2(-GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
-        GetWnd()->KctWake();
+        GetWindow().KctWake();
     }
     return 0;
 
     case WM_LBUTTONDOWN:
     {
-        ECK_DUILOCK;
         SetFocus();
         if (m_vItem.empty())
             break;
@@ -422,7 +418,6 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         }
         else if (wParam == 'A' && (GetKeyState(VK_CONTROL) & 0x8000))
         {
-            ECK_DUILOCK;
             EckCounter((int)m_vItem.size(), i)
             {
                 if (!m_vItem[i].bSel)
@@ -439,11 +434,10 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         if ((Dui::CElement*)wParam == &m_SB)
         {
-            switch (((Dui::DUINMHDR*)lParam)->uCode)
+            switch (((Dui::ELENMHDR*)lParam)->uNotify)
             {
-            case Dui::EE_VSCROLL:
+            case Dui::ENC_SCROLL:
             {
-                ECK_DUILOCK;
                 if (!MiIsManualScroll())
                     SeBeginExpand(TRUE);
                 ItmDelayComplete();
@@ -463,7 +457,6 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         if (wParam == IDT_MOUSEIDLE)
         {
-            ECK_DUILOCK;
             if (m_vItem.empty())
                 break;
             m_tMouseIdle -= TE_MOUSEIDLE;
@@ -479,15 +472,15 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_SIZE:
     {
-        m_pRenderer->LrSetViewSize(GetWidthF(), GetHeightF());
+        m_pRenderer->LrSetViewSize(GetWidth(), GetHeight());
 
         ItmDelayComplete();
         ItmLayout();
-        D2D1_RECT_F rc;
-        rc.left = GetWidthF() - m_SB.GetWidthF();
+        Kw::Rect rc;
+        rc.left = GetWidth() - m_SB.GetWidth();
         rc.top = 0;
-        rc.right = rc.left + m_SB.GetWidthF();
-        rc.bottom = rc.top + GetHeightF();
+        rc.right = rc.left + m_SB.GetWidth();
+        rc.bottom = rc.top + GetHeight();
         m_SB.SetRect(rc);
         if (!IsEmpty())
         {
@@ -525,7 +518,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_CREATE:
     {
-        GetWnd()->RegisterTimeLine(this);
+        GetWindow().KctRegisterTimeLine(this);
 
         const LRD_INIT InitOpt{ .pD2DContext = m_pDC, };
         m_pRenderer->LrInit(InitOpt);
@@ -546,13 +539,8 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     break;
 
     case WM_DESTROY:
-    {
-        SafeRelease(m_pLrc);
-        SafeRelease(m_psv);
-        SafeRelease(m_pRenderer);
         m_vItem.clear();
-    }
-    break;
+        break;
     }
     return __super::OnEvent(uMsg, wParam, lParam);
 }
@@ -561,7 +549,6 @@ HRESULT CVeLrc::LrcSetCurrentLine(int idxCurr)
 {
     if (idxCurr < 0)
         return E_BOUNDS;
-    ECK_DUILOCK;
     if (m_idxCurr == idxCurr)
         return S_FALSE;
     if (idxCurr >= (int)m_vItem.size())
@@ -585,17 +572,14 @@ HRESULT CVeLrc::LrcSetCurrentLine(int idxCurr)
         m_psv->InterruptAnimation();
         m_psv->SmoothScrollDelta(dy);
         ItmDelayPrepare(dy);
-        GetWnd()->KctWake();
+        GetWindow().KctWake();
     }
     return S_OK;
 }
 
-HRESULT CVeLrc::LrcInit(Lyric::CLyric* pLyric)
+HRESULT CVeLrc::LrcInit(RefPtr<Lyric::CLyric> pLyric)
 {
-    ECK_DUILOCK;
-    SafeRelease(m_pLrc);
-    if (m_pLrc = pLyric)
-        m_pLrc->AddRef();
+    m_pLrc = pLyric;
     m_idxCurr = -1;
     m_pRenderer->LrItmSetCount(m_pLrc->MgGetLineCount());
     ItmLayout();
@@ -609,7 +593,6 @@ HRESULT CVeLrc::LrcInit(Lyric::CLyric* pLyric)
 
 void CVeLrc::LrcClear()
 {
-    ECK_DUILOCK;
     SafeRelease(m_pLrc);
     m_vItem.clear();
     m_idxTop = -1;
@@ -626,7 +609,6 @@ void CVeLrc::LrcClear()
 
 void CVeLrc::SetTextFormatTrans(IDWriteTextFormat* pTf)
 {
-    ECK_DUILOCK;
     m_pRenderer->SetTextFormatTrans(pTf);
 }
 
@@ -712,12 +694,12 @@ void CVeLrc::ScrAutoScrolling()
     SeBeginExpand(FALSE);
     if (m_idxCurr >= 0)
         ItmDelayPrepare(dy);
-    GetWnd()->KctWake();
+    GetWindow().KctWake();
 }
 
 void CVeLrc::ItmLayout()
 {
-    const float cx = GetWidthF(), cy = GetHeightF();
+    const float cx = GetWidth(), cy = GetHeight();
     if (cx <= 0.f || cy <= 0.f)
     {
         m_SB.SetVisible(FALSE);

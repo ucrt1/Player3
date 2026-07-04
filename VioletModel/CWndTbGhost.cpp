@@ -100,9 +100,9 @@ HRESULT CWndTbGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax)
             InvalidateThumbnailCache();
     }
 
-    auto pCover = App->GetPlayer().GetCover();
+    auto pCover = App->Player().GetCover();
     if (!pCover.Get())
-        pCover = App->GetImg(AppIcon::DefaultCover);
+        pCover = App->GetImage(AppImage::DefaultCover);
     UINT cx, cy, cx0, cy0;
     pCover->GetSize(&cx0, &cy0);
     if ((float)cxMax / (float)cyMax > (float)cx0 / (float)cy0)// y对齐

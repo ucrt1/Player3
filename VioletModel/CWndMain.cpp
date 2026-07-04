@@ -4,15 +4,15 @@
 
 const static UINT MsgTaskbarButtonCreated{ RegisterWindowMessageW(L"TaskbarButtonCreated") };
 
-EckInlineNdCe AppIcon AutoNextModeToGImg(AutoNextMode eMode) noexcept
+EckInlineNdCe AppImage AutoNextModeToGImg(AutoNextMode eMode) noexcept
 {
     switch (eMode)
     {
-    case AutoNextMode::ListLoop: return AppIcon::Circle;
-    case AutoNextMode::List: return AppIcon::ArrowRight3;
-    case AutoNextMode::Radom: return AppIcon::ArrowCross;
-    case AutoNextMode::SingleLoop: return AppIcon::CircleOne;
-    case AutoNextMode::Single: return AppIcon::ArrowRight1;
+    case AutoNextMode::ListLoop: return AppImage::Circle;
+    case AutoNextMode::List: return AppImage::ArrowRight3;
+    case AutoNextMode::Radom: return AppImage::ArrowCross;
+    case AutoNextMode::SingleLoop: return AppImage::CircleOne;
+    case AutoNextMode::Single: return AppImage::ArrowRight1;
     }
     ECK_UNREACHABLE;
 }
@@ -27,9 +27,8 @@ void CWindowMain::ClearRes()
 BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
 {
     App->SetDarkMode(ShouldAppsUseDarkMode());
-    m_ptcUiThread = eck::PtcCurrent();
     CBass::Init();
-    App->GetPlayer().GetSignal().Connect(this, &CWindowMain::OnPlayEvent);
+    App->Player().GetSignal().Connect(this, &CWindowMain::OnPlayEvent);
 
     KctRegisterTimeLine(this);
 
@@ -121,7 +120,7 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
         {
             if (uMsg == WM_RBUTTONDOWN)
             {
-                const auto pList = App->GetPlayer().GetList();
+                const auto pList = App->Player().GetList();
                 if (pList)
                     pList->FlRmShuffle();
             }
@@ -179,29 +178,6 @@ void CWindowMain::PageShow(Page ePage, BOOL bAnimate)
         m_ecPage.Start(0, (float)CyPageSwitchAnDelta, !!m_pAnPage);
         m_bPageAnUpToDown = (idxShow < idxShowLast);
         m_pAnPage = m_vPage[idxShow];
-
-
-        if (!m_ecPage)
-        {
-            m_pecPage = new eck::CEasingCurve{};
-            RegisterTimeLine(m_pecPage);
-            m_pecPage->SetCallbackData((LPARAM)this);
-            m_pecPage->SetDuration(250);
-            m_pecPage->SetProcedure(eck::Easing::OutCubic);
-            m_pecPage->SetCallback([](float fCurrValue, float fOldValue, LPARAM lParam)
-                {
-                    const auto p = (CWindowMain*)lParam;
-                    const auto x = p->m_pAnPage->GetRectF().left;
-                    constexpr float yNormal = CyPageTitle + DTopPageTitle + CxPageIntPadding;
-                    if (p->m_bPageAnUpToDown)
-                        p->m_pAnPage->SetPosition(x, yNormal +
-                            CyPageSwitchAnDelta - fCurrValue);
-                    else
-                        p->m_pAnPage->SetPosition(x, yNormal -
-                            CyPageSwitchAnDelta + fCurrValue);
-                });
-        }
-        m_pecPage->Begin();
         KctWake();
     }
 }
@@ -210,7 +186,6 @@ void CWindowMain::PageClearAnimation()
 {
     if (!m_pAnPage)
         return;
-    m_pecPage->End();
     m_pAnPage = nullptr;
 }
 
@@ -235,7 +210,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         if (m_msProgTimer >= TE_PROG)
         {
             m_msProgTimer = 0;
-            m_TBProgress.SetTrackPosition(float(App->GetPlayer().GetCurrentTime() * ProgBarScale));
+            m_TBProgress.SetTrackPosition(float(App->Player().GetCurrentTime() * ProgBarScale));
             m_TBProgress.Invalidate();
             TblUpdateProgress();
         }
@@ -251,7 +226,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         TblUpdateProgress();
         if (m_PagePlaying.GetStyle() & Dui::DES_VISIBLE)
             m_PagePlaying.Invalidate();
-        m_TBProgress.SetRange(0.f, float(App->GetPlayer().GetTotalTime() * ProgBarScale));
+        m_TBProgress.SetRange(0.f, float(App->Player().GetTotalTime() * ProgBarScale));
         m_TBProgress.SetTrackPosition(0.f);
         m_TBProgress.Invalidate();
         m_PlayPanel.Invalidate();
@@ -263,7 +238,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
     case PlayEvt::Resume:
     {
         SetTimer(Handle, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
-        m_BTPlay.SetIcon(RealizeImage(AppIcon::Pause));
+        m_BTPlay.SetIcon(RealizeImage2(AppImage::Pause));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -279,7 +254,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
     case PlayEvt::Pause:
     {
         KillTimer(Handle, IDT_COMM_TICK);
-        m_BTPlay.SetImage(RealizeImage(AppIcon::Triangle));
+        m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -300,7 +275,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_TIMER:
         if (wParam == IDT_COMM_TICK)
-            App->GetPlayer().GetSignal().Emit({ PlayEvt::CommTick });
+            App->Player().GetSignal().Emit({ PlayEvt::CommTick });
         break;
     case WM_SIZE:
     {
@@ -387,7 +362,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         SetUserDpi(LOWORD(wParam));
         break;
     case WM_DWMCOLORIZATIONCOLORCHANGED:
-        StUpdateColorizationColor();
+        //StUpdateColorizationColor();
         break;
     case WM_SETTEXT:
     {
@@ -416,14 +391,14 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     {
         if (pEle == &m_TBProgress)
         {
-            App->GetPlayer().SetPosition(
-                m_TBProgress.GetTrackPos() / ProgBarScale);
+            App->Player().SetPosition(
+                m_TBProgress.GetTrackPosition() / ProgBarScale);
             return 0;
         }
-        else if (pEle->GetID() == ELEID_VOLBAR_TRACK)
+        else if (pEle->GetId() == ELEID_VOLBAR_TRACK)
         {
-            const auto f = ((Dui::CTrackBar*)pEle)->GetTrackPos();
-            App->GetPlayer().GetBass().SetVolume(f / 100.f);
+            const auto f = ((Dui::CTrackBar*)pEle)->GetTrackPosition();
+            App->Player().GetBass().SetVolume(f / 100.f);
             m_VolBar.OnVolumeChanged(f);
         }
     }
@@ -445,20 +420,20 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     }
     return 0;
 
-    case Dui::EE_COMMAND:
+    case Dui::ENC_COMMAND:
     {
         if (pEle == &m_BTPlay)
-            App->GetPlayer().PlayOrPause();
+            App->Player().PlayOrPause();
         else if (pEle == &m_BTPrev)
-            App->GetPlayer().Prev();
+            App->Player().Prev();
         else if (pEle == &m_BTNext)
-            App->GetPlayer().Next();
+            App->Player().Next();
         else if (pEle == &m_BTLrc)
             LwShow(!LwIsShowing());
         else if (pEle == &m_BTAutoNext)
         {
-            const auto r = App->GetPlayer().NextAutoNextMode();
-            m_BTAutoNext.SetImage(RealizeImage(AutoNextModeToGImg(r)));
+            const auto r = App->Player().NextAutoNextMode();
+            m_BTAutoNext.SetIcon(RealizeImage2(AutoNextModeToGImg(r)));
             m_BTAutoNext.Invalidate();
         }
         else if (pEle == &m_BTVol)
@@ -468,7 +443,7 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
             m_VolBar.SetPosition(x, y);
             m_VolBar.ShowAnimation();
         }
-        else if (pEle->GetID() == ELEID_PLAYPAGE_BACK)
+        else if (pEle->GetId() == ELEID_PLAYPAGE_BACK)
         {
             PpaPrepare();
             KctWake();
@@ -476,23 +451,47 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     }
     break;
     }
-    return __super::OnElemEvent(pEle, uMsg, wParam, lParam);
+    return __super::OnElementNotify(pEle, pnm);
 }
 
-ID2D1Bitmap1* CWindowMain::RealizeImage(AppIcon n)
+ID2D1Bitmap1* CWindowMain::RealizeImage(AppImage n)
 {
     if (!m_vBmpRealization[(size_t)n])
     {
-        GetDeviceContext()->CreateBitmapFromWicBitmap(App->GetImg(n),
+        GetDeviceContext()->CreateBitmapFromWicBitmap(
+            App->GetImage(n).Get(),
             (const D2D1_BITMAP_PROPERTIES1*)nullptr,
             &m_vBmpRealization[(size_t)n]);
     }
     return m_vBmpRealization[(size_t)n];
 }
 
+Dui::CBitmap CWindowMain::RealizeImage2(AppImage n)
+{
+    Dui::CBitmap Bitmap;
+    Bitmap.Set(RealizeImage(n));
+    return Bitmap;
+}
+
 void CWindowMain::TlTick(int iMs) noexcept
 {
+    if (m_bPPAnActive)
+        PpaTick(iMs);
+    if (m_pAnPage)
+    {
+        const auto bActive = m_ecPage.Tick((float)iMs, 250.f);
 
+        const auto x = m_pAnPage->GetRect().left;
+        constexpr float yNormal = CyPageTitle + DTopPageTitle + CxPageIntPadding;
+        if (m_bPageAnUpToDown)
+            m_pAnPage->SetPosition(x, yNormal +
+                CyPageSwitchAnDelta - m_ecPage.K);
+        else
+            m_pAnPage->SetPosition(x, yNormal -
+                CyPageSwitchAnDelta + m_ecPage.K);
+        if (!bActive)
+            m_pAnPage = nullptr;
+    }
 }
 
 void CWindowMain::LwShow(BOOL bShow)
@@ -525,11 +524,11 @@ BOOL CWindowMain::LwIsShowing()
 void CWindowMain::UpdateButtonImageSize()
 {
     constexpr D2D1_SIZE_F Size{ CxyCircleButtonImage, CxyCircleButtonImage };
-    m_BTPrev.SetImageSize(Size);
-    m_BTPlay.SetImageSize(Size);
-    m_BTNext.SetImageSize(Size);
-    m_BTLrc.SetImageSize(Size);
-    m_BTVol.SetImageSize(Size);
+    //m_BTPrev.SetImageSize(Size);
+    //m_BTPlay.SetImageSize(Size);
+    //m_BTNext.SetImageSize(Size);
+    //m_BTLrc.SetImageSize(Size);
+    //m_BTVol.SetImageSize(Size);
 }
 
 void CWindowMain::PpaPrepare()
@@ -630,7 +629,7 @@ void CWindowMain::PpaTick(int ms) noexcept
     BOOL bStillRunning{};
     EckCounter(4, i)
     {
-        m_bPPCornerAnActive[i] = m_PPCornerAn[i].Tick((float)iMs, pDur[i]);
+        m_bPPCornerAnActive[i] = m_PPCornerAn[i].Tick((float)ms, pDur[i]);
         eck::CalculatePointFromLineScale(ptMini[i].x, ptMini[i].y,
             ptLarge[i].x, ptLarge[i].y, m_PPCornerAn[i].K, pt[i].x, pt[i].y);
         if (m_bPPAnReverse)
@@ -705,13 +704,13 @@ void CWindowMain::OnCoverUpdate()
 
 void CWindowMain::OnColorSchemeChanged()
 {
-    m_BTPrev.SetImage(RealizeImage(AppIcon::Prev));
-    m_BTPlay.SetImage(RealizeImage(AppIcon::Triangle));
-    m_BTNext.SetImage(RealizeImage(AppIcon::Next));
-    m_BTAutoNext.SetImage(RealizeImage(
-        AutoNextModeToGImg(App->GetPlayer().GetAutoNextMode())));
-    m_BTLrc.SetImage(RealizeImage(AppIcon::Lrc));
-    m_BTVol.SetImage(RealizeImage(AppIcon::PlayerVolume3));
+    m_BTPrev.SetIcon(RealizeImage2(AppImage::Prev));
+    m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
+    m_BTNext.SetIcon(RealizeImage2(AppImage::Next));
+    m_BTAutoNext.SetIcon(RealizeImage2(
+        AutoNextModeToGImg(App->Player().GetAutoNextMode())));
+    m_BTLrc.SetIcon(RealizeImage2(AppImage::Lrc));
+    m_BTVol.SetIcon(RealizeImage2(AppImage::PlayerVolume3));
 }
 
 void CWindowMain::InvalidateRealizedImage()

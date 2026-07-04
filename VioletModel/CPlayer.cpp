@@ -49,7 +49,7 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
         {
             ((eck::ThreadContext*)pUser)->Callback.EnQueueCallback([]
                 {
-                    App->GetPlayer().m_Sig.Emit({ PlayEvt::End });
+                    App->Player().m_Sig.Emit({ PlayEvt::End });
                 });
         }, eck::PtcCurrent());
     m_MusicInfo.uMask = Tag::MIM_ALL;
@@ -79,11 +79,11 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     {
     UseDefCover:
         m_bDefCover = TRUE;
-        m_pBmpCover = App->GetImg(AppIcon::DefaultCover);
+        m_pBmpCover = App->GetImage(AppImage::DefaultCover);
         m_pBmpCover->AddRef();
     }
 
-    m_pLrc = eck::RefPtr<Lyric::CLyric>::Make();
+    m_pLrc = RefPtr<Lyric::CLyric>::Make();
 
     auto rsLrcPath{ e.rsFile };
     rsLrcPath.PazRenameExtension(EckArgString(L".lrc"));

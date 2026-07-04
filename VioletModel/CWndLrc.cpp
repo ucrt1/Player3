@@ -7,12 +7,12 @@ void CWndLrc::OnPlayEvent(const PLAY_EVT_PARAM& e)
 	switch (e.eEvent)
 	{
 	case PlayEvt::CommTick:
-		m_Lrc.LrcSetCurrentLine(App->GetPlayer().GetCurrLrcIdx());
+		m_Lrc.LrcSetCurrentLine(App->Player().GetCurrLrcIdx());
 		break;
 	case PlayEvt::Play:
 	{
 		Lyric::CLyric pLyric;
-		App->GetPlayer().GetLrc(pLyric());
+		App->Player().GetLrc(pLyric());
 		m_Lrc.SetLyric(pLyric.Get());
 	}
 	break;
@@ -104,7 +104,7 @@ LRESULT CWndLrc::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
 
-		App->GetPlayer().GetSignal().Connect(this, &CWndLrc::OnPlayEvent);
+		App->Player().GetSignal().Connect(this, &CWndLrc::OnPlayEvent);
 		KctRegisterTimeLine(this);
 
 		m_pVioletTheme = new CVioletTheme{};
@@ -113,31 +113,31 @@ LRESULT CWndLrc::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 		constexpr eck::LYTMARGINS Mar{ .r = CxyLrcPadding };
 		m_BTPrev.Create(nullptr, Dui::DES_VISIBLE, 0,
 			0, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTPrev.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::PrevSolid));
+		m_BTPrev.SetBitmap(App->GetMainWindow().RealizeImage(AppImage::PrevSolid));
 		m_BTPrev.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTPrev, Mar, eck::LF_FIX);
 
 		m_BTPlay.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTPlay.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::TriangleSolid));
+		m_BTPlay.SetBitmap(App->GetMainWindow().RealizeImage(AppImage::TriangleSolid));
 		m_BTPlay.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTPlay, Mar, eck::LF_FIX);
 
 		m_BTNext.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 2, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTNext.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::NextSolid));
+		m_BTNext.SetBitmap(App->GetMainWindow().RealizeImage(AppImage::NextSolid));
 		m_BTNext.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTNext, Mar, eck::LF_FIX);
 
 		m_BTLock.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 3, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTLock.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::LockSolid));
+		m_BTLock.SetBitmap(App->GetMainWindow().RealizeImage(AppImage::LockSolid));
 		m_BTLock.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTLock, Mar, eck::LF_FIX);
 
 		m_BTClose.Create(nullptr, Dui::DES_VISIBLE, 0,
 			CxyLrcBtn * 4, 0, CxyLrcBtn, CxyLrcBtn, nullptr, this);
-		m_BTClose.SetBitmap(App->GetMainWindow().RealizeImage(AppIcon::CrossSolid));
+		m_BTClose.SetBitmap(App->GetMainWindow().RealizeImage(AppImage::CrossSolid));
 		m_BTClose.SetTheme(m_pVioletTheme);
 		m_Layout.Add(&m_BTClose, {}, eck::LF_FIX);
 
@@ -177,16 +177,16 @@ LRESULT CWndLrc::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexce
 		case ELEN_DTLRC_GET_TIME:
 		{
 			const auto p = (NM_DTL_GET_TIME*)pnm;
-			p->fTime = (float)App->GetPlayer().GetBass().GetPosition();
+			p->fTime = (float)App->Player().GetBass().GetPosition();
 		}
 		return 0;
 		}
 	if (pEle == &m_BTPrev)
-		App->GetPlayer().Prev();
+		App->Player().Prev();
 	else if (pEle == &m_BTPlay)
-		App->GetPlayer().PlayOrPause();
+		App->Player().PlayOrPause();
 	else if (pEle == &m_BTNext)
-		App->GetPlayer().Next();
+		App->Player().Next();
 	//else if (pEle == &m_BTLock)
 	//	;
 	//else if (pEle == &m_BTClose)

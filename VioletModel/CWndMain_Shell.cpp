@@ -2,7 +2,7 @@
 #include "CWndMain.h"
 
 static HRESULT ScaleImageForButton(
-	AppIcon eImg,
+	AppImage eImg,
 	int iDpi,
 	_Out_ IWICBitmapSource*& pSource)
 {
@@ -11,7 +11,7 @@ static HRESULT ScaleImageForButton(
 	HRESULT hr;
 	if (FAILED(hr = eck::g_pWicFactory->CreateBitmapScaler(&pScaler)))
 		return hr;
-	return pScaler->Initialize(App->GetImg(eImg), cxy, cxy, WICBitmapInterpolationModeFant);
+	return pScaler->Initialize(App->GetImage(eImg), cxy, cxy, WICBitmapInterpolationModeFant);
 }
 
 HRESULT CWindowMain::TblCreateGhostWindow(PCWSTR pszText)
@@ -31,13 +31,13 @@ HRESULT CWindowMain::TblSetup()
 
 	HICON hiPrev, hiNext;
 	ComPtr<IWICBitmapSource> pBitmap;
-	ScaleImageForButton(AppIcon::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(hiPrev, pBitmap.Get());
-	ScaleImageForButton(AppIcon::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(m_hiTbPlay, pBitmap.Get());
-	ScaleImageForButton(AppIcon::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(m_hiTbPause, pBitmap.Get());
-	ScaleImageForButton(AppIcon::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(hiNext, pBitmap.Get());
 
 	THUMBBUTTON tb[3]{};
@@ -68,13 +68,13 @@ HRESULT CWindowMain::TblUpdateToolBarIcon()
 {
 	HICON hiPrev, hiNext;
 	ComPtr<IWICBitmapSource> pBitmap;
-	ScaleImageForButton(AppIcon::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::PrevSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(hiPrev, pBitmap.Get());
-	ScaleImageForButton(AppIcon::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::TriangleSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(m_hiTbPlay, pBitmap.Get());
-	ScaleImageForButton(AppIcon::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::PauseSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(m_hiTbPause, pBitmap.Get());
-	ScaleImageForButton(AppIcon::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
+	ScaleImageForButton(AppImage::NextSolid, GetWindowDpi(), pBitmap.AtSelfClear());
 	eck::WicCreateIcon(hiNext, pBitmap.Get());
 
 	THUMBBUTTON tb[3]{};
@@ -112,13 +112,13 @@ BOOL CWindowMain::TblOnCommand(WPARAM wParam)
 	switch (LOWORD(wParam))
 	{
 	case IDTBB_NEXT:
-		App->GetPlayer().Next();
+		App->Player().Next();
 		return TRUE;
 	case IDTBB_PLAY:
-		App->GetPlayer().PlayOrPause();
+		App->Player().PlayOrPause();
 		return TRUE;
 	case IDTBB_PREV:
-		App->GetPlayer().Prev();
+		App->Player().Prev();
 		return TRUE;
 	}
 	return FALSE;
@@ -127,7 +127,7 @@ BOOL CWindowMain::TblOnCommand(WPARAM wParam)
 HRESULT CWindowMain::TblUpdateState()
 {
 	HRESULT hr;
-	const auto& Player = App->GetPlayer();
+	const auto& Player = App->Player();
 	if (Player.IsActive())
 		hr = m_pTaskbarList->SetProgressState(
 			Handle, Player.IsPaused() ? TBPF_PAUSED : TBPF_NORMAL);
@@ -149,7 +149,7 @@ HRESULT CWindowMain::TblUpdateState()
 
 HRESULT CWindowMain::TblUpdateProgress()
 {
-	const auto& Player = App->GetPlayer();
+	const auto& Player = App->Player();
 	return m_pTaskbarList->SetProgressValue(Handle,
 		ULONGLONG(Player.GetCurrentTime() * 1000.),
 		ULONGLONG(Player.GetTotalTime() * 1000.));
@@ -219,16 +219,16 @@ HRESULT CWindowMain::SmtcInit() noexcept
 					switch (eBtn)
 					{
 					case WinMedia::SystemMediaTransportControlsButton::Play:
-						App->GetPlayer().PlayOrPause(FALSE);
+						App->Player().PlayOrPause(FALSE);
 						break;
 					case WinMedia::SystemMediaTransportControlsButton::Pause:
-						App->GetPlayer().PlayOrPause(TRUE);
+						App->Player().PlayOrPause(TRUE);
 						break;
 					case WinMedia::SystemMediaTransportControlsButton::Next:
-						App->GetPlayer().Next();
+						App->Player().Next();
 						break;
 					case WinMedia::SystemMediaTransportControlsButton::Previous:
-						App->GetPlayer().Prev();
+						App->Player().Prev();
 						break;
 					default:
 						return;
@@ -246,7 +246,7 @@ HRESULT CWindowMain::SmtcInit() noexcept
 #if VIOLET_WINRT
 eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay()
 {
-	const auto mi = App->GetPlayer().GetMusicInfo();// 复制一份
+	const auto mi = App->Player().GetMusicInfo();// 复制一份
 	auto Token{ co_await eck::CoroGetPromiseToken() };
 	co_await eck::CoroResumeBackground();
 
@@ -340,7 +340,7 @@ HRESULT CWindowMain::SmtcUpdateTimeLineRange() noexcept
 	m_SmtcTimeline.StartTime(TimeSpan{});
 	m_SmtcTimeline.MinSeekTime(TimeSpan{});
 
-	const auto lfSeconds = App->GetPlayer().GetTotalTime();
+	const auto lfSeconds = App->Player().GetTotalTime();
 	const TimeSpan Dur{ std::chrono::milliseconds{ LONGLONG(lfSeconds * 1000.) } };
 	m_SmtcTimeline.EndTime(Dur);
 	m_SmtcTimeline.MaxSeekTime(Dur);
@@ -356,7 +356,7 @@ HRESULT CWindowMain::SmtcUpdateTimeLinePosition() noexcept
 {
 #if VIOLET_WINRT
 	using winrt::Windows::Foundation::TimeSpan;
-	const auto lfSeconds = App->GetPlayer().GetCurrentTime();
+	const auto lfSeconds = App->Player().GetCurrentTime();
 	const TimeSpan Pos{ std::chrono::milliseconds{ LONGLONG(lfSeconds * 1000.) } };
 	m_SmtcTimeline.Position(Pos);
 	m_Smtc.UpdateTimelineProperties(m_SmtcTimeline);
@@ -369,7 +369,7 @@ HRESULT CWindowMain::SmtcUpdateTimeLinePosition() noexcept
 HRESULT CWindowMain::SmtcUpdateState() noexcept
 {
 #if VIOLET_WINRT
-	const auto& Player = App->GetPlayer();
+	const auto& Player = App->Player();
 	if (!Player.IsActive())
 	{
 		m_Smtc.PlaybackStatus(WinMedia::MediaPlaybackStatus::Closed);
