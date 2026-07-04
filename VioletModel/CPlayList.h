@@ -20,13 +20,13 @@ public:
 private:
     struct ITEM
     {
-        eck::CRefStrW rsName{};		// 名称
-        eck::CRefStrW rsFile{};		// 文件路径
+        eck::CStringW rsName{};		// 名称
+        eck::CStringW rsFile{};		// 文件路径
 
-        eck::CRefStrW rsTitle{};	// 标题
-        eck::CRefStrW rsArtist{};	// 艺术家
-        eck::CRefStrW rsAlbum{};	// 唱片集
-        eck::CRefStrW rsGenre{};	// 流派
+        eck::CStringW rsTitle{};	// 标题
+        eck::CStringW rsArtist{};	// 艺术家
+        eck::CStringW rsAlbum{};	// 唱片集
+        eck::CStringW rsGenre{};	// 流派
 
         PLDATA s{};
         int idxSortMapping{ -1 };	// 【排序时用】映射到的项
@@ -39,12 +39,12 @@ private:
     };
     struct GROUP
     {
-        eck::CRefStrW rsName{};
+        eck::CStringW rsName{};
         std::vector<GROUPSUB> vItem{};
     };
 
-    eck::CRefStrW m_rsListFile{};	// 对应列表文件路径
-    eck::CRefStrW m_rsName{};		// 列表名称
+    eck::CStringW m_rsListFile{};	// 对应列表文件路径
+    eck::CStringW m_rsName{};		// 列表名称
 
     std::vector<ITEM> m_vFlat{};
     std::vector<GROUP> m_vGroup{};
@@ -81,7 +81,7 @@ public:
     EckInlineNdCe auto& FlAtAbs(int idx) noexcept { return m_vFlat[idx]; }
     EckInlineNdCe ITEM& FlAt(int idx) noexcept { return FlSchIsActive() ? FlAtAbs(FlSchAt(idx)) : FlAtAbs(idx); }
 
-    int FlInsert(const eck::CRefStrW& rsFile, int idx = -1);
+    int FlInsert(const eck::CStringW& rsFile, int idx = -1);
     int FlInsertEmpty(int idx = -1);
 
     EckInlineNdCe int FlGetCount() const noexcept { return (int)m_vFlat.size(); }
@@ -106,7 +106,7 @@ public:
     /// <param name="rsName">组名</param>
     /// <param name="idx">插入位置，-1表示末尾</param>
     /// <returns>组索引</returns>
-    int GrInsertGroup(const eck::CRefStrW& rsName, int idx = -1);
+    int GrInsertGroup(const eck::CStringW& rsName, int idx = -1);
 
     /// <summary>
     /// 插入项目。
@@ -116,7 +116,7 @@ public:
     /// <param name="idxItem">项目在组中的索引，-1表示末尾</param>
     /// <param name="idxGroup">所在组的索引，-1表示新建组</param>
     /// <returns></returns>
-    GROUPIDX GrInsert(const eck::CRefStrW& rsFile, int idxItem = -1, int idxGroup = -1);
+    GROUPIDX GrInsert(const eck::CStringW& rsFile, int idxItem = -1, int idxGroup = -1);
 
     EckInlineNdCe int GrGetGroupCount() const noexcept { return (int)m_vGroup.size(); }
 

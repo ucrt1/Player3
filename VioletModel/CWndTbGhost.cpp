@@ -100,8 +100,7 @@ HRESULT CWndTbGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax)
             InvalidateThumbnailCache();
     }
 
-    ComPtr<IWICBitmap> pCover;
-    App->GetPlayer().GetCover(pCover.AtSelf());
+    auto pCover = App->GetPlayer().GetCover();
     if (!pCover.Get())
         pCover = App->GetImg(AppIcon::DefaultCover);
     UINT cx, cy, cx0, cy0;

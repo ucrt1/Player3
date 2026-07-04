@@ -22,7 +22,7 @@ private:
 public:
 	LRESULT OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
-	LRESULT OnElementNotify(Dui::CElement* pElem, Dui::ELENMHDR* pnm) noexcept override;
+	LRESULT OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept override;
 
 	LRESULT OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e) noexcept override;
 

@@ -6,7 +6,6 @@
 
 #include "eck\PchInclude.h"
 #include "eck\SystemHelper.h"
-#include "eck\CommDlg.h"
 #include "eck\CLinearLayout.h"
 #include "eck\CLayoutDummy.h"
 #include "eck\DuiBuiltinCompositor.h"
@@ -28,6 +27,7 @@
 #include "eck\DwLayoutPath.h"
 #include "eck\CTrivialBuffer.h"
 #include "eck\ImageHelper.h"
+#include "eck\RefPtr.h"
 
 #if VIOLET_WINRT
 //#include "eck\WinRtDCompInterop.h"
@@ -54,6 +54,7 @@ using eck::PCVOID;
 using eck::PCBYTE;
 using eck::SafeRelease;
 using eck::ComPtr;
+using eck::RefPtr;
 
 namespace Dui = eck::Dui;
 namespace Tag = eck::MediaTag;

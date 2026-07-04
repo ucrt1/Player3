@@ -7,7 +7,7 @@ private:
 	struct ITEM
 	{
 		std::shared_ptr<CPlayList> pList;
-		ComPtr<eck::CD2DImageList> pImageList;	// 供UI使用
+		RefPtr<eck::CD2DImageList> pImageList;	// 供UI使用
 	};
 	std::vector<ITEM> m_vPlayList{};
 public:

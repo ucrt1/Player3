@@ -22,7 +22,7 @@ private:
     };
     struct STATIC_LINE
     {
-        eck::CRefStrW rsText;
+        eck::CStringW rsText;
         ID2D1GeometryRealization* pGrF;
         ID2D1GeometryRealization* pGrS;
         float cx;

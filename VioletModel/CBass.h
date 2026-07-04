@@ -37,7 +37,7 @@ public:
 		return BASS_GetVersion();
 	}
 
-	EckInline static void VerToString(DWORD dw, eck::CRefStrW& rs)
+	EckInline static void VerToString(DWORD dw, eck::CStringW& rs)
 	{
 		const WORD wHigh = HIWORD(dw);
 		const WORD wLow = LOWORD(dw);

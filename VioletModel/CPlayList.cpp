@@ -48,7 +48,7 @@ void CPlayList::InvalidateImage()
 	}
 }
 
-int CPlayList::FlInsert(const eck::CRefStrW& rsFile, int idx)
+int CPlayList::FlInsert(const eck::CStringW& rsFile, int idx)
 {
 	idx = FlInsertEmpty(idx);
 	auto& e = FlAt(idx);
@@ -114,12 +114,12 @@ void CPlayList::FlRmOnPlayItem(int idxFlat) noexcept
     }
 }
 
-int CPlayList::GrInsertGroup(const eck::CRefStrW& rsName, int idx)
+int CPlayList::GrInsertGroup(const eck::CStringW& rsName, int idx)
 {
 	return 0;
 }
 
-CPlayList::GROUPIDX CPlayList::GrInsert(const eck::CRefStrW& rsFile, int idxItem, int idxGroup)
+CPlayList::GROUPIDX CPlayList::GrInsert(const eck::CStringW& rsFile, int idxItem, int idxGroup)
 {
 	return GROUPIDX();
 }

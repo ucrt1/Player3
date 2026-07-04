@@ -16,7 +16,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
     const auto pList = Param.pList.get();
     struct TMP
     {
-        Tag::MUSICINFO mi{};
+        Tag::SimpleData mi{};
         ComPtr<IWICBitmap> pWicBitmap{};
         ComPtr<ID2D1Bitmap1> pD2DBitmap{};
         UINT uSecTime{};
@@ -185,7 +185,7 @@ int CPageList::PlSearchEditContent(CPlayList* pList)
         m_bSearchItemEditEmpty = FALSE;
         gte.codepage = eck::CP_UTF16LE;
         gte.flags = GT_DEFAULT;
-        eck::CRefStrW rsFilter{};
+        eck::CStringW rsFilter{};
         rsFilter.ReSize((int)gte.cb);
         gte.cb = (DWORD)rsFilter.ByteSize();
 

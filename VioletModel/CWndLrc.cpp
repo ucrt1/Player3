@@ -169,9 +169,9 @@ LRESULT CWndLrc::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	return __super::OnMessage(uMsg, wParam, lParam);
 }
 
-LRESULT CWndLrc::OnElementNotify(Dui::CElement* pElem, Dui::ELENMHDR* pnm) noexcept
+LRESULT CWndLrc::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept
 {
-	if (pElem == &m_Lrc)
+	if (pEle == &m_Lrc)
 		switch (pnm->uNotify)
 		{
 		case ELEN_DTLRC_GET_TIME:
@@ -181,17 +181,17 @@ LRESULT CWndLrc::OnElementNotify(Dui::CElement* pElem, Dui::ELENMHDR* pnm) noexc
 		}
 		return 0;
 		}
-	if (pElem == &m_BTPrev)
+	if (pEle == &m_BTPrev)
 		App->GetPlayer().Prev();
-	else if (pElem == &m_BTPlay)
+	else if (pEle == &m_BTPlay)
 		App->GetPlayer().PlayOrPause();
-	else if (pElem == &m_BTNext)
+	else if (pEle == &m_BTNext)
 		App->GetPlayer().Next();
-	//else if (pElem == &m_BTLock)
+	//else if (pEle == &m_BTLock)
 	//	;
-	//else if (pElem == &m_BTClose)
+	//else if (pEle == &m_BTClose)
 	//	;
-	return __super::OnElementNotify(pElem, pnm);
+	return __super::OnElementNotify(pEle, pnm);
 }
 
 LRESULT CWndLrc::OnRenderEvent(UINT uMsg, Dui::RENDER_EVENT& e) noexcept

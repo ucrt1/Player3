@@ -78,8 +78,6 @@ private:
 
     Dui::CCompositor2DAffineTransform m_CompNormalPageAn{};
 
-    eck::ThreadContext* m_ptcUiThread{};
-
     HICON m_hiTbPlay{}, m_hiTbPause{};
     ComPtr<ITaskbarList4> m_pTaskbarList{};
     CWndTbGhost m_WndTbGhost{ *this };
@@ -91,9 +89,9 @@ private:
 #if VIOLET_WINRT
     WinMedia::SystemMediaTransportControls m_Smtc{ nullptr };
     WinMedia::SystemMediaTransportControlsTimelineProperties m_SmtcTimeline{};
-    eck::CoroTask<> m_TskSmtcUpdateDisplay{};	// winrt无法在UI线程等待任务，因此将其在此协程中运行
-    ULONGLONG m_ullSmtcTimeLineLastUpdate{};	// 上次更新时间线的时间戳，5s一更新
-    winrt::event_token m_SmtcEvtTokenButtonPressed{};	// 反初始化时使用
+    eck::CoroTask<> m_TskSmtcUpdateDisplay{};   // winrt无法在UI线程等待任务，因此将其在此协程中运行
+    ULONGLONG m_ullSmtcTimeLineLastUpdate{};    // 上次更新时间线的时间戳，5s一更新
+    winrt::event_token m_SmtcEvtTokenButtonPressed{};// 反初始化时使用
 #endif
 
     int m_msProgTimer{};
@@ -154,7 +152,6 @@ public:
     BOOL TlIsValid() noexcept override { return m_bPPAnActive; }
     int TlGetCurrentInterval() noexcept override { return 0; }
 
-    EckInlineNdCe auto ThreadCtx() const noexcept { return m_ptcUiThread; }
     EckInlineNdCe auto GetVioletTheme() const noexcept { return m_pVioletTheme; }
 
     void LwShow(BOOL bShow);

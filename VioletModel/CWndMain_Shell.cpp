@@ -180,7 +180,7 @@ HRESULT CWindowMain::SmtcInit() noexcept
 	hr = SHGetKnownFolderPath(FOLDERID_CommonPrograms, 0, nullptr, &pszProgramPath);
 	if (SUCCEEDED(hr))
 	{
-		eck::CRefStrW rsLink{ pszProgramPath };
+		eck::CStringW rsLink{ pszProgramPath };
 		rsLink.PushBack(EckArgString(L"\\VioletModel.lnk"));
 		if (!PathFileExistsW(rsLink.Data()))
 			eck::CreateShortcut(rsLink.Data(),
@@ -271,7 +271,7 @@ eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay()
 		if (pCover->bLink)
 		{
 			auto Task{ StorageFile::GetFileFromPathAsync(
-				std::get<eck::CRefStrW>(pCover->varPic).Data()) };
+				std::get<eck::CStringW>(pCover->varPic).Data()) };
 			Token.GetPromise().SetCanceller([](void* p)
 				{
 					((decltype(Task)*)p)->Cancel();

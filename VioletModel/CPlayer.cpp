@@ -17,12 +17,6 @@ void CPlayer::OnPlayEvent(const PLAY_EVT_PARAM& e)
     }
 }
 
-CPlayer::~CPlayer()
-{
-    SafeRelease(m_pBmpCover);
-    SafeRelease(m_pLrc);
-}
-
 void CPlayer::SetList(CPlayList* pPlayList) noexcept
 {
     if (m_pPlayList == pPlayList)
@@ -65,17 +59,17 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     Opt.uFlags = Tag::SMOF_MOVE;
     VltGetMusicInfo(e.rsFile.Data(), m_MusicInfo, Opt);
     const auto pPic = m_MusicInfo.GetMainCover();
-    SafeRelease(m_pBmpCover);
+
     if (pPic)
     {
         m_bDefCover = FALSE;
-        if (pPic->bLink)
-            m_dwLastHrOrBassErr = eck::CreateWicBitmap(
-                m_pBmpCover, std::get<1>(pPic->varPic).Data());
+        if (pPic->IsLink())
+            m_dwLastHrOrBassErr = eck::WicLoadSource(
+                m_pBmpCover.AtSelfClear(), pPic->GetPath().Data());
         else
         {
-            const auto pStream = new eck::CStreamView{ std::get<0>(pPic->varPic) };
-            m_dwLastHrOrBassErr = eck::CreateWicBitmap(m_pBmpCover, pStream);
+            const auto pStream = new eck::CStreamView{ pPic->GetData() };
+            m_dwLastHrOrBassErr = eck::WicLoadSource(m_pBmpCover.AtSelfClear(), pStream);
             pStream->Release();
         }
         if (FAILED(m_dwLastHrOrBassErr))
@@ -89,8 +83,7 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
         m_pBmpCover->AddRef();
     }
 
-    SafeRelease(m_pLrc);
-    m_pLrc = new Lyric::CLyric{};
+    m_pLrc = eck::RefPtr<Lyric::CLyric>::Make();
 
     auto rsLrcPath{ e.rsFile };
     rsLrcPath.PazRenameExtension(EckArgString(L".lrc"));

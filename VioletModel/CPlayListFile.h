@@ -280,16 +280,16 @@ public:
 
     void SetRecentOptions();
 
-    void SetViewOptions(const eck::CRefStrW& rsQuery);
+    void SetViewOptions(const eck::CStringW& rsQuery);
 
     void SetStage(Stage eStage);
 
-    void AddGroup(const eck::CRefStrW& rsName,
+    void AddGroup(const eck::CStringW& rsName,
         _In_reads_(cOrg) const int* pidxOrg, size_t cOrg);
 
     void AddFlat(_In_reads_(cOrg) const int* pidxOrg, size_t cOrg);
 
-    void AddBookmark(const BOOKMARKITEM& Item, eck::CRefStrW& rsName);
+    void AddBookmark(const BOOKMARKITEM& Item, eck::CStringW& rsName);
 
     void BeginBookMark();
 

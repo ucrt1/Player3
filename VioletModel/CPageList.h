@@ -34,7 +34,7 @@ private:
 
     eck::CLinearLayoutH m_Lyt{};
 
-    eck::CRefStrW m_rsDispInfoBuf{};
+    eck::CStringW m_rsDispInfoBuf{};
 
     int m_cxIl{}, m_cyIl{};
     ID2D1Bitmap1* m_pBmpDefCover{};

@@ -308,7 +308,6 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         PageClearAnimation();
         const auto cxClient = GetClientWidthLogical();
         const auto cyClient = GetClientHeightLogical();
-        m_CompNormalPageAn.RefPoint = { cxClient / 2.f,cyClient / 2.f };
         m_NormalPageContainer.SetRect({ 0,0,cxClient,cyClient });
         m_TitleBar.SetRect({ 0,0,cxClient,CyTitleBar });
         m_TabPanel.SetRect({ 0,0,CxTabPanel,cyClient - CyPlayPanel });
@@ -404,7 +403,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
 LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept
 {
-    switch (uMsg)
+    switch (pnm->uNotify)
     {
     case ELEN_PAGE_CHANGE:
     {
@@ -413,17 +412,17 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     }
     return 0;
 
-    case Dui::TBE_POSCHANGED:
+    case Dui::ENC_POSCHANGED:
     {
-        if (pElem == &m_TBProgress)
+        if (pEle == &m_TBProgress)
         {
             App->GetPlayer().SetPosition(
                 m_TBProgress.GetTrackPos() / ProgBarScale);
             return 0;
         }
-        else if (pElem->GetID() == ELEID_VOLBAR_TRACK)
+        else if (pEle->GetID() == ELEID_VOLBAR_TRACK)
         {
-            const auto f = ((Dui::CTrackBar*)pElem)->GetTrackPos();
+            const auto f = ((Dui::CTrackBar*)pEle)->GetTrackPos();
             App->GetPlayer().GetBass().SetVolume(f / 100.f);
             m_VolBar.OnVolumeChanged(f);
         }
@@ -432,14 +431,12 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
 
     case ELEN_MINICOVER_CLICK:
     {
-        ECK_DUILOCK;
         PpaPrepare();
         KctWake();
     }
     return 0;
     case ELEN_PLAYPAGE_LBTN_UP:
     {
-        ECK_DUILOCKWND;
         if (m_bPPAnActive)
         {
             PpaPrepare();
@@ -450,28 +447,28 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
 
     case Dui::EE_COMMAND:
     {
-        if (pElem == &m_BTPlay)
+        if (pEle == &m_BTPlay)
             App->GetPlayer().PlayOrPause();
-        else if (pElem == &m_BTPrev)
+        else if (pEle == &m_BTPrev)
             App->GetPlayer().Prev();
-        else if (pElem == &m_BTNext)
+        else if (pEle == &m_BTNext)
             App->GetPlayer().Next();
-        else if (pElem == &m_BTLrc)
+        else if (pEle == &m_BTLrc)
             LwShow(!LwIsShowing());
-        else if (pElem == &m_BTAutoNext)
+        else if (pEle == &m_BTAutoNext)
         {
             const auto r = App->GetPlayer().NextAutoNextMode();
             m_BTAutoNext.SetImage(RealizeImage(AutoNextModeToGImg(r)));
             m_BTAutoNext.Invalidate();
         }
-        else if (pElem == &m_BTVol)
+        else if (pEle == &m_BTVol)
         {
             const auto x = GetClientWidthLogical() - CxVolBar - CxVolBarPadding;
-            const auto y = m_BTVol.GetOffsetInClientF().y - CyVolBar;
+            const auto y = m_BTVol.GetOffsetInClient().y - CyVolBar;
             m_VolBar.SetPosition(x, y);
             m_VolBar.ShowAnimation();
         }
-        else if (pElem->GetID() == ELEID_PLAYPAGE_BACK)
+        else if (pEle->GetID() == ELEID_PLAYPAGE_BACK)
         {
             PpaPrepare();
             KctWake();
@@ -479,7 +476,7 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     }
     break;
     }
-    return __super::OnElemEvent(pElem, uMsg, wParam, lParam);
+    return __super::OnElemEvent(pEle, uMsg, wParam, lParam);
 }
 
 ID2D1Bitmap1* CWindowMain::RealizeImage(AppIcon n)
@@ -595,7 +592,7 @@ void CWindowMain::PpaTick(int ms) noexcept
         MaxPPAnDuration * 5 / 6,
         MaxPPAnDuration,
     };
-    if (!(m_bPPAnActive = m_PlayPageAn.Tick((float)iMs, MaxPPAnDuration)))
+    if (!(m_bPPAnActive = m_PlayPageAn.Tick((float)ms, MaxPPAnDuration)))
     {
         Redraw(FALSE);
         PpaEnd();
@@ -604,11 +601,15 @@ void CWindowMain::PpaTick(int ms) noexcept
     // 页面动画更新
     const auto kOverlay = std::clamp(m_PlayPageAn.Time / DurOverlayOpacity, 0.f, 1.f);
     m_CompPlayPageAn.SetOpacity(m_bPPAnReverse ? (1.f - kOverlay) : kOverlay);
-    m_CompNormalPageAn.Scale = 1.f - m_PlayPageAn.K * 0.2f;
-    m_CompNormalPageAn.Update2DAffineTransform();
-    m_CompNormalPageAn.SetBlurStdDeviation(20.f * m_PlayPageAn.K);
-    m_CompNormalPageAn.Opacity = 1.f - m_PlayPageAn.K;
-    m_CompNormalPageAn.UpdateOpacity();
+
+    const auto kScale = 1.f - m_PlayPageAn.K * 0.2f;
+    const auto xRef = GetClientWidthLogical() / 2.f;
+    const auto yRef = GetClientHeightLogical() / 2.f;
+    m_CompNormalPageAn.SetMatrix(
+        D2D1::Matrix3x2F::Translation(xRef, yRef) *
+        D2D1::Matrix3x2F::Scale(kScale, kScale) *
+        D2D1::Matrix3x2F::Translation(-xRef, -yRef));
+    m_CompNormalPageAn.SetOpacity(1.f - m_PlayPageAn.K);
 
     D2D1_POINT_2F pt[4];
     const D2D1_POINT_2F ptMini[]

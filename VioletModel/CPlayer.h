@@ -49,14 +49,14 @@ EckInlineNdCe AutoNextMode operator++(AutoNextMode& eMode) noexcept
 class CPlayer final
 {
 private:
-	eck::CSignal<eck::NoIntercept_T, void, const PLAY_EVT_PARAM&> m_Sig{};
+	eck::CEventChain<eck::NoIntercept_T, void, const PLAY_EVT_PARAM&> m_Sig{};
 	CBass m_Bass{};
 
-	IWICBitmap* m_pBmpCover{};
+	ComPtr<IWICBitmapSource> m_pBmpCover{};
 	CPlayList* m_pPlayList{};
 
-	Tag::MUSICINFO m_MusicInfo{};
-	Lyric::CLyric* m_pLrc{};
+	Tag::SimpleData m_MusicInfo{};
+	RefPtr<Lyric::CLyric> m_pLrc{};
 
 	int m_idxCurrLrc = -1;
 	int m_idxLastLrc = -1;
@@ -88,8 +88,6 @@ public:
 		m_Sig.Connect(this, &CPlayer::OnPlayEvent);
 	}
 
-	~CPlayer();
-
 	EckInlineNdCe auto& GetSignal() noexcept { return m_Sig; }
 	void SetList(CPlayList* pPlayList) noexcept;
 	EckInlineNdCe CPlayList* GetList() const noexcept { return m_pPlayList; }
@@ -117,13 +115,7 @@ public:
 	// 秒
 	void SetPosition(double lfPos);
 
-	// 返回后调用方持有一份引用
-	void GetCover(_Out_ IWICBitmap*& pBmp)
-	{
-		if (m_pBmpCover)
-			m_pBmpCover->AddRef();
-		pBmp = m_pBmpCover;
-	}
+	auto& GetCover() const{return m_pBmpCover; }
 
 	AutoNextMode NextAutoNextMode();
     EckInlineNdCe BOOL IsRandom() const noexcept { return m_eAutoNextMode == AutoNextMode::Radom; }
@@ -132,11 +124,7 @@ public:
 	EckInlineNdCe DWORD GetLastHrOrBassErr() const noexcept { return m_dwLastHrOrBassErr; }
 	EckInlineNdCe BOOL IsPaused() const noexcept { return m_bPaused; }
 	EckInlineNdCe int GetCurrLrcIdx() const noexcept { return m_idxCurrLrc; }
-	EckInlineNd void GetLrc(_Out_ Lyric::CLyric*& pLrc) const noexcept
-	{
-		pLrc = m_pLrc;
-		pLrc->AddRef();
-	}
+	EckInlineNd auto& GetLrc() const noexcept { return m_pLrc; }
 	EckInlineCe void SetAutoNextMode(AutoNextMode eMode) noexcept { m_eAutoNextMode = eMode; }
 	EckInlineNdCe AutoNextMode GetAutoNextMode() const noexcept { return m_eAutoNextMode; }
 	EckInlineNdCe BOOL IsDefaultCover() const noexcept { return m_bDefCover; }
