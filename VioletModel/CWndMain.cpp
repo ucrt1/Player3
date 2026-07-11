@@ -698,7 +698,7 @@ void CWindowMain::OnCoverUpdate()
     if (pBmp)
     {
         m_CompPlayPageAn.SetOverlayBitmap(pBmp);
-        m_PlayPanel.m_Cover.SetBitmap(pBmp);
+        m_PlayPanel.m_Cover.SetCoverBitmap(pBmp);
     }
 }
 
