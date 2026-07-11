@@ -33,10 +33,10 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_PAINT:
     {
-        Dui::ELEMPAINTSTRU ps;
+        Dui::PAINTINFO ps;
         BeginPaint(ps, wParam, lParam);
         m_pBrush->SetColor(App->GetColor(GPal::PlayPanelBk));
-        m_pDC->FillRectangle(ps.rcfClipInElem, m_pBrush);
+        GetDC()->FillRectangle(ps.rcfClipInElem, m_pBrush);
         EndPaint(ps);
     }
     return 0;
@@ -62,11 +62,11 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     case WM_CREATE:
     {
         App->Player().GetSignal().Connect(this, &CPlayPanel::OnPlayEvent);
-        m_pDC->CreateSolidColorBrush({}, &m_pBrush);
+        GetDC()->CreateSolidColorBrush({}, &m_pBrush);
         const auto pWnd = (CWindowMain*)GetWnd();
 
         ComPtr<IDWriteTextFormat> pTfTitle;
-        App->GetFontFactory().NewFont(pTfTitle.RefOf(), eck::Alignment::Near,
+        App->GetFontFactory().NewFont(pTfTitle.AtSelf(), eck::Alignment::Near,
             eck::Alignment::Center, (float)CyFontNormal, 700);
         pTfTitle->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 

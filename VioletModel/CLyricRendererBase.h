@@ -8,23 +8,35 @@ enum : BYTE
     LRIF_PREV_AN = 1 << 1,
     LRIF_CURR_AN = 1 << 2,
     LRIF_SCROLL_EXPAND = 1 << 3,
+
+    LRCF_TOP_BOTTOM_FADE = 1 << 0,
 };
+
+// 如无特殊说明，坐标相对元素
 struct LRD_DRAW
 {
-    int idx;
+    int idx{};
 
-    BYTE uFlags;			// LRIF_*
-    eck::Alignment eAlignH;
-    Dui::State eState;      // 背景状态，设为State::None表示不绘制背景
+    BYTE uFlags{};      // LRIF_*
+    eck::Alignment eAlignH{};
+    BYTE ss{};
 
     float x;
     float y;
     float cx;
     float cy;
 
-    float fScale;           // 当前缩放，对于常规情况必须设为1
-    float kAnSelBkg;		// 0~1，指定LRIF_AN_SEL_BKG时有效
-    float kScrollExpand;	// 0~1，指定LRIF_SCROLL_EXPAND时有效
+    float cxMain;
+    float cxTranslation;
+
+    float fScale;       // 当前缩放，对于常规情况必须设为1
+    float kAnSelBkg;    // 0~1，指定LRIF_AN_SEL_BKG时有效
+    float kScrollExpand;// 0~1，指定LRIF_SCROLL_EXPAND时有效
+
+    ComPtr<IDWriteTextLayout> pTlMain{};
+    ComPtr<IDWriteTextLayout> pTlTranslation{};
+
+    const D2D1_RECT_F* prcClip{};// 相对客户区
 };
 
 struct LRD_EMTRY_TEXT
@@ -32,60 +44,50 @@ struct LRD_EMTRY_TEXT
     std::wstring_view svText;
 };
 
-class CLyricRendererBase : public eck::CReferenceCounted
+class CLyricRendererBase
 {
-public:
-    enum : size_t
-    {
-        CriNormal,
-        CriHiLight,
-        CriMax
-    };
-protected:
-    ComPtr<IDWriteTextFormat> m_pTfMain{};
-    ComPtr<IDWriteTextFormat> m_pTfTrans{};
-
-    ComPtr<Dui::ITheme> m_pTheme{};
-
-    D2D1_COLOR_F m_Color[CriMax]{};
+private:
+    // 渲染器通常使用宿主元素主题的Draw方法
+    // 如果不使用，渲染结果也应该尽量与Ss对齐
+    Dui::CElement* m_pEle{};
 
     float m_cxView{};
     float m_cyView{};
-    float m_fMaxScale{ 1.1f };      // 当前项目的最大缩放比例
-    float m_cxyLineMargin{ 14.f };  // 项目文本与边框间距
-    float m_dMainToTrans{ 5.f };    // 正文与翻译间距
 
-    BOOLEAN m_bTopBtmFade{};		// 指示是否启用顶部和底部渐变
+    UINT m_uFlags{};// LRCF_*
 public:
     virtual ~CLyricRendererBase() = default;
 
-    void SetTheme(Dui::ITheme* pTheme) { m_pTheme = pTheme; }
-    void SetTextFormatMain(IDWriteTextFormat* pTf) { m_pTfMain = pTf; }
-    void SetTextFormatTrans(IDWriteTextFormat* pTf) { m_pTfTrans = pTf; }
-
-    void SetColor(size_t idx, const D2D1_COLOR_F& cr) { m_Color[idx] = cr; }
-    void SetColor(_In_reads_(CriMax) const D2D1_COLOR_F* pcr)
+    // 宿主构造渲染器完毕后立即调用
+    virtual HRESULT LrInitialize(Dui::CElement* pEle) noexcept
     {
-        for (size_t i = 0; i < CriMax; ++i)
-            m_Color[i] = pcr[i];
+        m_pEle = pEle;
+        return S_OK;
     }
 
-    void SetMaxScale(float f) { m_fMaxScale = f; }
-    float GetMaxScale() const { return m_fMaxScale; }
-    void SetItemMargin(float f) { m_cxyLineMargin = f; }
-    float GetItemMargin() const { return m_cxyLineMargin; }
-    void SetMainToTransDistance(float f) { m_dMainToTrans = f; }
-    float GetMainToTransDistance() const { return m_dMainToTrans; }
+    // 绘画通知
+    virtual void LrBeginDraw() noexcept = 0;
+    virtual void LrEndDraw() noexcept = 0;
 
-    virtual HRESULT LrInit(const LRD_INIT& Opt) = 0;
-    virtual void LrBeginDraw() = 0;
-    virtual void LrEndDraw() = 0;
-    virtual void LrItmSetCount(int cItems) = 0;
-    virtual HRESULT LrItmUpdateText(int idx, const Lyric::Line& Line,
-        _Out_ LRD_TEXT_METRICS& Met) = 0;
-    virtual void LrItmDraw(const LRD_DRAW& Opt) = 0;
-    virtual HRESULT LrUpdateEmptyText(const LRD_EMTRY_TEXT& Opt) = 0;
-    virtual void LrSetViewSize(float cx, float cy) = 0;
-    virtual void LrDpiChanged(float fNewDpi) = 0;
-    virtual void LrInvalidate() = 0;
+    // 当元素尺寸改变时调用此方法
+    virtual void LrSetViewSize(float cx, float cy) noexcept
+    {
+        m_cxView = cx;
+        m_cyView = cy;
+    }
+
+    virtual void LrSetItemCount(int cItems) noexcept = 0;
+    virtual void LrDrawItem(const LRD_DRAW& Opt) noexcept = 0;
+
+    virtual void LrDpiChanged(float fNewDpi) noexcept = 0;
+
+    // 清除所有缓存
+    virtual void LrInvalidate() noexcept = 0;
+
+    virtual void LrSetFlags(UINT uFlags) noexcept { m_uFlags = uFlags; }
+
+    EckInlineNdCe float GetViewWidth() const noexcept { return m_cxView; }
+    EckInlineNdCe float GetViewHeight() const noexcept { return m_cyView; }
+    EckInlineNdCe UINT GetFlags() const noexcept { return m_uFlags; }
+    EckInlineNdCe Dui::CElement* GetHostElement() const noexcept { return m_pEle; }
 };

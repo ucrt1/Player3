@@ -9,7 +9,7 @@ LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_PAINT:
     {
-        Dui::ELEMPAINTSTRU ps;
+        Dui::PAINTINFO ps;
         BeginPaint(ps, wParam, lParam);
         //if (m_idxCurr >= 0)
         //{
@@ -36,7 +36,7 @@ LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         //else
         //	DrawStaticLine(0.f);
 
-        ECK_DUI_DBG_DRAW_FRAME;
+        DbgDrawFrame();
         EndPaint(ps);
     }
     return 0;
@@ -44,7 +44,7 @@ LRESULT CVeDtLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         //GetWindow().RegisterTimeLine(this);
 
-        //m_pDC->QueryInterface(&m_pDC1);
+        //GetDC()->QueryInterface(&m_pDC1);
         //InvalidateCache();
 
         //ComPtr<ID2D1SolidColorBrush> pBr;
@@ -97,14 +97,13 @@ void CVeDtLrc::LrcSetEmptyText(std::wstring_view svEmptyText)
 
 }
 
-void CVeDtLrc::SetTextFormatTrans(IDWriteTextFormat* pTf)
+void CVeDtLrc::SetTextFormatTranslation(IDWriteTextFormat* pTf)
 {
 
 }
 
 void CVeDtLrc::SetLyric(Lyric::CLyric* pLrc)
 {
-    ECK_DUILOCK;
     m_idxCurr = -1;
     std::swap(m_pLrc, pLrc);
     if (m_pLrc)

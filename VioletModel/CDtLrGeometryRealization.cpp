@@ -5,7 +5,7 @@ void CDtLrGeometryRealization::DrawTextGeometry(ID2D1GeometryRealization* pGrS,
     ID2D1GeometryRealization* pGrF, float dx, float dy, size_t idxFill)
 {
     D2D1_MATRIX_3X2_F Mat0;
-    m_pDC->GetTransform(&Mat0);
+    GetDC()->GetTransform(&Mat0);
     auto Mat{ Mat0 };
     Mat.dx += dx;
     Mat.dy += dy;
@@ -13,31 +13,31 @@ void CDtLrGeometryRealization::DrawTextGeometry(ID2D1GeometryRealization* pGrS,
     {
         Mat.dx += m_dxyShadow;
         Mat.dy += m_dxyShadow;
-        m_pDC->SetTransform(Mat);
+        GetDC()->SetTransform(Mat);
         m_pBrush->SetColor(m_Color[CriShadow]);
-        m_pDC->DrawGeometryRealization(pGrF, m_pBrush.Get());
+        GetDC()->DrawGeometryRealization(pGrF, m_pBrush.Get());
         Mat.dx -= m_dxyShadow;
         Mat.dy -= m_dxyShadow;
     }
-    m_pDC->SetTransform(Mat);
+    GetDC()->SetTransform(Mat);
     if (pGrS)
     {
         m_pBrush->SetColor(m_Color[CriBorder]);
-        m_pDC->DrawGeometryRealization(pGrS, m_pBrush.Get());
+        GetDC()->DrawGeometryRealization(pGrS, m_pBrush.Get());
     }
     if (pGrF)
     {
         m_pBrush->SetColor(m_Color[idxFill]);
-        m_pDC->DrawGeometryRealization(pGrF, m_pBrush.Get());
+        GetDC()->DrawGeometryRealization(pGrF, m_pBrush.Get());
     }
-    m_pDC->SetTransform(Mat0);
+    GetDC()->SetTransform(Mat0);
 }
 
-HRESULT CDtLrGeometryRealization::LrInit(const LRD_INIT& Opt)
+HRESULT CDtLrGeometryRealization::LrInitialize(const LRD_INIT& Opt)
 {
-    if (SUCCEEDED(Opt.pD2DContext->QueryInterface(m_pDC.AddrOfClear())))
+    if (SUCCEEDED(Opt.pD2DContext->QueryInterface(GetDC().AtClear())))
     {
-        m_pDC->CreateSolidColorBrush({}, m_pBrush.AddrOfClear());
+        GetDC()->CreateSolidColorBrush({}, m_pBrush.AtClear());
         return S_OK;
     }
     return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
@@ -73,7 +73,7 @@ void CDtLrGeometryRealization::LrDraw(const LDRD_DRAW& Opt)
         Opt.bHiLight ? CriHiLight : CriNormal);
 
     float cy = e.size.height;
-    if (e.pLayoutTrans.Get())
+    if (e.pTlTranslation.Get())
     {
         const float yNew = y + cy;
         if (e.bTooLongTrans)
@@ -106,56 +106,56 @@ HRESULT CDtLrGeometryRealization::LrUpdateText(int idx, const Lyric::Line& Line,
     auto& e = m_Line[idx];
     const auto bOldTooLong = m_bTooLong;
     float xDpi, yDpi;
-    m_pDC->GetDpi(&xDpi, &yDpi);
+    GetDC()->GetDpi(&xDpi, &yDpi);
     const float fTolerance = D2D1::ComputeFlatteningTolerance(
         D2D1::Matrix3x2F::Identity(), xDpi, yDpi, 1.f);
 
     if (Line.cchLrc)
         eck::g_pDwFactory->CreateTextLayout(Line.pszLrc, Line.cchLrc,
-            m_pTfMain.Get(), m_cxView, m_cyView, e.pLayout.AddrOfClear());
+            m_pTfMain.Get(), m_cxView, m_cyView, e.pTlMain.AtClear());
     else
         eck::g_pDwFactory->CreateTextLayout(EckArgString(L"♪♪♪"),
-            m_pTfMain.Get(), m_cxView, m_cyView, e.pLayout.AddrOfClear());
+            m_pTfMain.Get(), m_cxView, m_cyView, e.pTlMain.AtClear());
     DWRITE_TEXT_METRICS tm;
-    e.pLayout->GetMetrics(&tm);
+    e.pTlMain->GetMetrics(&tm);
     e.bTooLong = (tm.width > m_cxView);
     e.size = { tm.width,tm.height };
     Met.cxMain = e.size.width;
     Met.cyMain = e.size.height;
 
     ComPtr<ID2D1PathGeometry1> pPath;
-    eck::GetTextLayoutPathGeometry(e.pLayout.Get(),
+    eck::GetTextLayoutPathGeometry(e.pTlMain.Get(),
         0, 0, pPath.RefOfClear(), xDpi);
 
-    m_pDC->CreateFilledGeometryRealization(pPath.Get(), fTolerance, e.pGrF.AddrOfClear());
-    m_pDC->CreateStrokedGeometryRealization(pPath.Get(), fTolerance,
-        m_cxOutline, nullptr, e.pGrS.AddrOfClear());
-    e.pLayoutTrans.Clear();
+    GetDC()->CreateFilledGeometryRealization(pPath.Get(), fTolerance, e.pGrF.AtClear());
+    GetDC()->CreateStrokedGeometryRealization(pPath.Get(), fTolerance,
+        m_cxOutline, nullptr, e.pGrS.AtClear());
+    e.pTlTranslation.Clear();
     e.pGrFTrans.Clear();
     e.pGrSTrans.Clear();
     if (Line.cchTranslation)
     {
         eck::g_pDwFactory->CreateTextLayout(Line.pszTranslation, Line.cchTranslation,
-            m_pTfTrans.Get(), m_cxView, m_cyView, &e.pLayoutTrans);
-        e.pLayoutTrans->GetMetrics(&tm);
+            m_pTfTranslation.Get(), m_cxView, m_cyView, &e.pTlTranslation);
+        e.pTlTranslation->GetMetrics(&tm);
         e.bTooLongTrans = (tm.width > m_cxView);
         e.sizeTrans = { tm.width,tm.height };
-        Met.cxTrans = e.sizeTrans.width;
-        Met.cyTrans = e.sizeTrans.height;
+        Met.cxTranslation = e.sizeTrans.width;
+        Met.cyTranslation = e.sizeTrans.height;
 
-        eck::GetTextLayoutPathGeometry(e.pLayoutTrans.Get(),
+        eck::GetTextLayoutPathGeometry(e.pTlTranslation.Get(),
             0, 0, pPath.RefOfClear(), xDpi);
 
-        m_pDC->CreateFilledGeometryRealization(pPath.Get(), fTolerance, e.pGrFTrans.AddrOfClear());
-        m_pDC->CreateStrokedGeometryRealization(pPath.Get(), fTolerance,
-            m_cxOutline, nullptr, e.pGrSTrans.AddrOfClear());
+        GetDC()->CreateFilledGeometryRealization(pPath.Get(), fTolerance, e.pGrFTrans.AtClear());
+        GetDC()->CreateStrokedGeometryRealization(pPath.Get(), fTolerance,
+            m_cxOutline, nullptr, e.pGrSTrans.AtClear());
     }
     else
-        Met.cxTrans = Met.cyTrans = 0.f;
+        Met.cxTranslation = Met.cyTranslation = 0.f;
     if (idx == 0)
     {
         m_cyFirstLine = e.size.height;
-        if (e.pLayoutTrans.Get())
+        if (e.pTlTranslation.Get())
             m_cyFirstLine += (e.sizeTrans.height + m_cyLinePadding);
     }
     m_bTooLong = !!e.bTooLong || !!e.bTooLongTrans;

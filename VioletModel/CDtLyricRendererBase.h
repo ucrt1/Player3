@@ -23,7 +23,7 @@ public:
     };
 protected:
     ComPtr<IDWriteTextFormat> m_pTfMain{};
-    ComPtr<IDWriteTextFormat> m_pTfTrans{};
+    ComPtr<IDWriteTextFormat> m_pTfTranslation{};
 
     D2D1_COLOR_F m_Color[CriMax]{};
 
@@ -43,7 +43,7 @@ protected:
     eck::Alignment m_eAlign[2]{ eck::Alignment::Near,eck::Alignment::Far };
 public:
     void SetTextFormatMain(IDWriteTextFormat* pTf) { m_pTfMain = pTf; }
-    void SetTextFormatTrans(IDWriteTextFormat* pTf) { m_pTfTrans = pTf; }
+    void SetTextFormatTranslation(IDWriteTextFormat* pTf) { m_pTfTranslation = pTf; }
 
     void SetColor(size_t idx, const D2D1_COLOR_F& cr) { m_Color[idx] = cr; }
     void SetColor(_In_reads_(CriMax) const D2D1_COLOR_F* pcr)
@@ -52,7 +52,7 @@ public:
             m_Color[i] = pcr[i];
     }
 
-    virtual HRESULT LrInit(const LRD_INIT& Opt) = 0;
+    virtual HRESULT LrInitialize(const LRD_INIT& Opt) = 0;
     virtual void LrBeginDraw() = 0;
     virtual void LrEndDraw() = 0;
     virtual void LrDraw(const LDRD_DRAW& Opt) = 0;

@@ -1,8 +1,9 @@
 ﻿#include "pch.h"
 #include "CLrGeometryRealization.h"
+#include "CVeLrc.h"
 
 static constexpr D2D1_COLOR_F InterpolateColor(
-    const D2D1_COLOR_F& c1, const D2D1_COLOR_F& c2, float k)
+    const D2D1_COLOR_F& c1, const D2D1_COLOR_F& c2, float k) noexcept
 {
     return {
         c1.r + (c2.r - c1.r) * k,
@@ -11,13 +12,13 @@ static constexpr D2D1_COLOR_F InterpolateColor(
         c1.a + (c2.a - c1.a) * k };
 }
 
-void CLrGeometryRealization::ReCreateFadeBrush()
+void CLyricRendererD2D::ReCreateFadeBrush() noexcept
 {
     m_pBrFade.Clear();
-    if (!m_bTopBtmFade)
+    if (!(GetFlags() & LRCF_TOP_BOTTOM_FADE))
         return;
     constexpr float CyLrcGradient = 50.f;
-    const auto k = CyLrcGradient / m_cyView;
+    const auto k = CyLrcGradient / GetViewHeight();
     const D2D1_GRADIENT_STOP Stop[]
     {
         {},
@@ -29,164 +30,184 @@ void CLrGeometryRealization::ReCreateFadeBrush()
     m_pDC->CreateGradientStopCollection(EckArgArray(Stop), &pStopCollection);
     D2D1_LINEAR_GRADIENT_BRUSH_PROPERTIES Prop;
     Prop.startPoint = {};
-    Prop.endPoint = { 0.f,m_cyView };
+    Prop.endPoint = { 0.f, GetViewHeight() };
     m_pDC->CreateLinearGradientBrush(Prop, pStopCollection.Get(), &m_pBrFade);
 }
 
-HRESULT CLrGeometryRealization::LrInit(const LRD_INIT& Opt)
+HRESULT CLyricRendererD2D::LrInitialize(Dui::CElement* pEle) noexcept
 {
-    if (SUCCEEDED(Opt.pD2DContext->QueryInterface(m_pDC.AddrOfClear())))
-    {
-        m_pDC->CreateSolidColorBrush({}, m_pBrush.AddrOfClear());
-        return S_OK;
-    }
-    return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+    const auto hr = __super::LrInitialize(pEle);
+    if (FAILED(hr))
+        return hr;
+    pEle->GetDC()->QueryInterface(&m_pDC);
+    return S_OK;
 }
 
-void CLrGeometryRealization::LrBeginDraw()
+void CLyricRendererD2D::LrBeginDraw() noexcept
 {
     // 可以优化为不使用图层，但是太麻烦了不做了
-    if (m_bTopBtmFade)
+    if (GetFlags() & LRCF_TOP_BOTTOM_FADE)
     {
         D2D1_LAYER_PARAMETERS1 LyParam{ D2D1::LayerParameters1() };
-        LyParam.contentBounds = { 0.f,0.f,m_cxView,m_cyView };
+        LyParam.contentBounds = { 0.f, 0.f, GetViewWidth(), GetViewHeight() };
         LyParam.opacityBrush = m_pBrFade.Get();
         m_pDC->PushLayer(LyParam, nullptr);
     }
 }
 
-void CLrGeometryRealization::LrEndDraw()
+void CLyricRendererD2D::LrEndDraw() noexcept
 {
-    if (m_bTopBtmFade)
+    if (GetFlags() & LRCF_TOP_BOTTOM_FADE)
         m_pDC->PopLayer();
 }
 
-void CLrGeometryRealization::LrItmSetCount(int cItems)
+void CLyricRendererD2D::LrSetItemCount(int cItems) noexcept
 {
     m_vItem.clear();
     m_vItem.resize(cItems);
 }
 
-HRESULT CLrGeometryRealization::LrItmUpdateText(int idx,
-    const Lyric::Line& Line, _Out_ LRD_TEXT_METRICS& Met)
-{
-    EckAssert(idx >= 0 && idx < (int)m_vItem.size());
-    DWRITE_TEXT_METRICS Metrics{};
-    auto& e = m_vItem[idx];
-    e.bLayoutValid = TRUE;
-    e.bGrValid = FALSE;
-    const float cxMax = (m_cxView - m_cxyLineMargin * 2.f) / m_fMaxScale;
-
-    eck::g_pDwFactory->CreateTextLayout(Line.pszLrc, Line.cchLrc,
-        m_pTfMain.Get(), cxMax, m_cyView, e.pLayoutMain.AddrOfClear());
-    e.pLayoutMain->GetMetrics(&Metrics);
-    Met.cxMain = e.cxMain = Metrics.width;
-    Met.cyMain = Metrics.height;
-
-    if (Line.pszTranslation && Line.cchTranslation)
-    {
-        eck::g_pDwFactory->CreateTextLayout(Line.pszTranslation,
-            Line.cchTranslation, m_pTfTrans.Get(),
-            cxMax, m_cyView, e.pLayoutTrans.AddrOfClear());
-        e.pLayoutTrans->GetMetrics(&Metrics);
-        Met.cxTrans = e.cxTrans = Metrics.width;
-        Met.cyTrans = Metrics.height;
-    }
-    else
-    {
-        e.pLayoutTrans.Clear();
-        Met.cxTrans = e.cxTrans = 0.f;
-    }
-    return S_OK;
-}
-
-void CLrGeometryRealization::LrItmDraw(const LRD_DRAW& Opt)
+void CLyricRendererD2D::LrDrawItem(const LRD_DRAW& Opt) noexcept
 {
     EckAssert(Opt.idx >= 0 && Opt.idx < (int)m_vItem.size());
     const auto& Item = m_vItem[Opt.idx];
     D2D1_MATRIX_3X2_F Mat0;
     m_pDC->GetTransform(&Mat0);
 
+    const auto cxyLineMargin = GetHostElement()->GetTheme()->
+        GetMetric(CVeLyric::IdMeItemMargin, CVeLyric::DefaultItemMargin);
+    const auto fMaxScale = GetHostElement()->GetTheme()->
+        GetMetric(CVeLyric::IdMeMaximumScale, CVeLyric::DefaultMaximumScale);
+
     D2D1_POINT_2F ptScale{};
-    ptScale.y = Opt.cy / 2.f - m_cxyLineMargin;
+    ptScale.y = Opt.cy / 2.f - cxyLineMargin;
     switch (Opt.eAlignH)
     {
     case eck::Alignment::Center:
-        ptScale.x = m_cxView / 2.f;
+        ptScale.x = GetViewWidth() / 2.f;
         break;
     case eck::Alignment::Far:
-        ptScale.x = m_cxView;
+        ptScale.x = GetViewWidth();
         break;
     }
 
     D2D1_MATRIX_3X2_F Mat{ Mat0 };
-    const auto cyExtra = (Opt.cy - m_cxyLineMargin * 2.f) *
-        (m_fMaxScale - 1.f) / 2.f;
-    Mat.dx += m_cxyLineMargin;
-    Mat.dy += (Opt.y + m_cxyLineMargin + cyExtra);
+    const auto cyExtra = (Opt.cy - cxyLineMargin * 2.f) *
+        (fMaxScale - 1.f) / 2.f;
+    Mat.dx += cxyLineMargin;
+    Mat.dy += (Opt.y + cxyLineMargin + cyExtra);
 
-    if (!Item.bGrValid)
+    if (!Item.bCacheValid)
     {
         auto& Item = m_vItem[Opt.idx];
-        constexpr float cyPadding[]{ 5.f,0.f };
+        Item.bCacheValid = TRUE;
+        Item.cxMax = std::max(Opt.cxMain, Opt.cxTranslation);
+        {
+            DWRITE_TEXT_METRICS tm;
+            if (Opt.pTlMain)
+            {
+                Opt.pTlMain->GetMetrics(&tm);
+                Item.bMultiLine = (tm.lineCount > 1);
+            }
+            if (!Item.bMultiLine && Opt.pTlTranslation)
+            {
+                Opt.pTlTranslation->GetMetrics(&tm);
+                Item.bMultiLine = (tm.lineCount > 1);
+            }
+        }
 
         float x[2]{};
         switch (Opt.eAlignH)
         {
         case eck::Alignment::Center:
-            x[0] = (m_cxView - m_cxView / Opt.fScale) / 2.f;
-            x[1] = (m_cxView - Item.cxTrans) / 2.f;
+            x[0] = (GetViewWidth() - Opt.cxMain) / 2.f;
+            x[1] = (GetViewWidth() - Opt.cxTranslation) / 2.f;
             break;
         case eck::Alignment::Far:
-            x[0] = (m_cxView - m_cxView / Opt.fScale);
-            x[1] = (m_cxView - Item.cxTrans);
+            x[0] = GetViewWidth() - Opt.cxMain;
+            x[1] = GetViewWidth() - Opt.cxTranslation;
             break;
         }
 
         float xDpi, yDpi;
         m_pDC->GetDpi(&xDpi, &yDpi);
+
         ComPtr<ID2D1PathGeometry1> pPathGeometry;
-        eck::GetTextLayoutPathGeometry(2, &Item.pLayoutMain, cyPadding, x,
-            0.f, pPathGeometry.RefOf(), xDpi, TRUE);
+        IDWriteTextLayout* const pTl[]{ Opt.pTlMain.Get(), Opt.pTlTranslation.Get() };
+        constexpr float cyPadding[]{ 5.f,0.f };
+        eck::GetTextLayoutPathGeometry(
+            EckArgArrayR(pTl), cyPadding,
+            x, 0.f,
+            pPathGeometry.AtSelf(),
+            xDpi,
+            TRUE);
+
         m_pDC->CreateFilledGeometryRealization(
             pPathGeometry.Get(),
             D2D1::ComputeFlatteningTolerance(
-                D2D1::Matrix3x2F::Identity(), xDpi, yDpi, m_fMaxScale),
-            Item.pGrMain.AddrOfClear());
-        Item.bGrValid = TRUE;
+                D2D1::Matrix3x2F::Identity(), xDpi, yDpi, fMaxScale),
+            Item.pGrMain.AtClear());
     }
 
-    if (Opt.eState != Dui::State::None)
+    const auto pEle = eck::DbgDynamicCast<CVeLyric*>(GetHostElement());
+    if (Opt.ss)
     {
-        D2D1_RECT_F rc{ Opt.x,Opt.y,Opt.x + Opt.cx,Opt.y + Opt.cy };
-        Dui::DTB_OPT ThemeOpt;
-        if ((Opt.uFlags & LRIF_AN_SEL_BKG) && Opt.eState == Dui::State::Hot)
+        D2D1_RECT_F rc{ Opt.x, Opt.y, Opt.x + Opt.cx, Opt.y + Opt.cy };
+        if ((Opt.uFlags & LRIF_AN_SEL_BKG) && (Opt.ss == CVeLyric::SsHot))
         {
-            const auto dxy = -m_cxyLineMargin * Opt.kAnSelBkg;
+            const auto dxy = -cxyLineMargin * Opt.kAnSelBkg;
             eck::InflateRect(rc, dxy, dxy);
-            ThemeOpt.uFlags = Dui::DTBO_NEW_OPACITY;
-            ThemeOpt.fOpacity = 1.f - Opt.kAnSelBkg;
+            Dui::SimpleStyle ssNull{ pEle->TmSimpleStyle(Opt.ss) };
+            ssNull.bBackArgb = ssNull.bBorderArgb = FALSE;
+            ssNull.CrBack = ssNull.CrBorder = Dui::IdTmInvalid;
+
+            const auto ss = Dui::TmSsLerp(
+                pEle->GetTheme().Get(),
+                pEle->TmSimpleStyle(Opt.ss),
+                ssNull,
+                1.f - Opt.kAnSelBkg);
+            pEle->GetTheme()->Draw(
+                pEle,
+                &ss,
+                Dui::IdPtNormal,
+                rc,
+                Opt.prcClip);
         }
         else
-            ThemeOpt.uFlags = Dui::DTBO_NONE;
-        m_pTheme->DrawBackground(Dui::Part::ListItem, Opt.eState, rc, &ThemeOpt);
+            pEle->GetTheme()->Draw(
+                pEle,
+                &pEle->TmSimpleStyle(Opt.ss),
+                Dui::IdPtNormal,
+                rc,
+                Opt.prcClip);
     }
 
     if (Opt.uFlags & LRIF_PREV_AN)
     {
-        const auto k = m_fMaxScale + 1.f - Opt.fScale;
+        const auto k = fMaxScale + 1.f - Opt.fScale;
         m_pDC->SetTransform(D2D1::Matrix3x2F::Scale(k, k, ptScale) * Mat);
-        const auto m = (Opt.fScale - 1.f) / (m_fMaxScale - 1.f);
-        m_pBrush->SetColor(InterpolateColor(
-            m_Color[CriNormal], m_Color[CriHiLight], 1.f - m));
+        const auto m = (Opt.fScale - 1.f) / (fMaxScale - 1.f);
+
+        auto argb = Dui::TmSsLerpColor(
+            pEle->GetTheme().Get(), FALSE,
+            CVeLyric::IdCrText, CVeLyric::IdCrTextActive,
+            1.f - m);
+        if (!argb)
+            argb = 0;
+        pEle->GetWindow().CcSetBrushColor(eck::ArgbToD2DColorF(*argb));
     }
     else if (Opt.uFlags & LRIF_CURR_AN)
     {
         const auto k = Opt.fScale;
         m_pDC->SetTransform(D2D1::Matrix3x2F::Scale(k, k, ptScale) * Mat);
-        const auto m = (Opt.fScale - 1.f) / (m_fMaxScale - 1.f);
-        m_pBrush->SetColor(InterpolateColor(
-            m_Color[CriNormal], m_Color[CriHiLight], m));
+        const auto m = (Opt.fScale - 1.f) / (fMaxScale - 1.f);
+        auto argb = Dui::TmSsLerpColor(
+            pEle->GetTheme().Get(), FALSE,
+            CVeLyric::IdCrText, CVeLyric::IdCrTextActive,
+            m);
+        if (!argb)
+            argb = 0;
+        pEle->GetWindow().CcSetBrushColor(eck::ArgbToD2DColorF(*argb));
     }
     else
     {
@@ -197,79 +218,37 @@ void CLrGeometryRealization::LrItmDraw(const LRD_DRAW& Opt)
         }
         else
             m_pDC->SetTransform(Mat);
-        m_pBrush->SetColor(m_Color[(Opt.uFlags & LRIF_CURR_AN) ? CriHiLight : CriNormal]);
+        pEle->GetWindow().CcSetBrushColor(pEle->GetTheme()->GetColorD2D(
+            (Opt.uFlags & LRIF_CURR_AN) ? CVeLyric::IdCrTextActive : CVeLyric::IdCrText));
     }
-    m_pDC->DrawGeometryRealization(Item.pGrMain.Get(), m_pBrush.Get());
+    m_pDC->DrawGeometryRealization(Item.pGrMain.Get(), pEle->GetWindow().CcGetBrush());
     m_pDC->SetTransform(Mat0);
 }
 
-HRESULT CLrGeometryRealization::LrUpdateEmptyText(const LRD_EMTRY_TEXT& Opt)
+void CLyricRendererD2D::LrSetViewSize(float cx, float cy) noexcept
 {
-    m_pGrEmptyText.Clear();
-    m_cxEmptyText = m_cyEmptyText = 0.f;
-
-    HRESULT hr;
-    ComPtr<IDWriteTextLayout> pLayout;
-
-    hr = eck::g_pDwFactory->CreateTextLayout(Opt.svText.data(),
-        (UINT32)Opt.svText.size(), m_pTfMain.Get(),
-        m_cxView, m_cyView, &pLayout);
-    if (FAILED(hr))
-        return hr;
-    DWRITE_TEXT_METRICS tm{};
-    pLayout->GetMetrics(&tm);
-    m_cxEmptyText = tm.width;
-    m_cyEmptyText = tm.height;
-    pLayout->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_LEADING);
-    pLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_WRAP);
-
-    float xDpi, yDpi;
-    m_pDC->GetDpi(&xDpi, &yDpi);
-
-    ComPtr<ID2D1PathGeometry1> pPathGeometry;
-    eck::GetTextLayoutPathGeometry(pLayout.Get(),
-        0.f, 0.f, pPathGeometry.RefOf(), xDpi);
-
-    return m_pDC->CreateFilledGeometryRealization(
-        pPathGeometry.Get(),
-        D2D1::ComputeFlatteningTolerance(
-            D2D1::Matrix3x2F::Identity(), xDpi, yDpi),
-        &m_pGrEmptyText);
-}
-
-void CLrGeometryRealization::LrSetViewSize(float cx, float cy)
-{
-    m_cyView = cy;
-    if (eck::FloatEqual(m_cxView, cx))
-        return;
-    if (cx < m_cxView)
+    if (cx < GetViewWidth())
         for (auto& e : m_vItem)
         {
-            if (e.bMultiLine || std::max(e.cxMain, e.cxTrans) > cx)
-            {
-                e.bGrValid = FALSE;
-                e.bLayoutValid = FALSE;
-            }
+            if (e.bMultiLine || e.cxMax > cx)
+                e.bCacheValid = FALSE;
         }
     else
         for (auto& e : m_vItem)
         {
             if (e.bMultiLine)
-            {
-                e.bGrValid = FALSE;
-                e.bLayoutValid = FALSE;
-            }
+                e.bCacheValid = FALSE;
         }
-    m_cxView = cx;
+    __super::LrSetViewSize(cx, cy);
 }
 
-void CLrGeometryRealization::LrDpiChanged(float fNewDpi)
+void CLyricRendererD2D::LrDpiChanged(float fNewDpi) noexcept
 {
     LrInvalidate();
 }
 
-void CLrGeometryRealization::LrInvalidate()
+void CLyricRendererD2D::LrInvalidate() noexcept
 {
     for (auto& e : m_vItem)
-        e.bGrValid = FALSE;
+        e.bCacheValid = FALSE;
 }

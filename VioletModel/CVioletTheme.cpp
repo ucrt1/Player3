@@ -27,7 +27,7 @@ HRESULT CVioletTheme::DrawBackground(Dui::Part ePart, Dui::State eState,
         default:
             goto DoDef;
         }
-        m_pDC->FillEllipse(Ell, m_pBrush.Get());
+        GetDC()->FillEllipse(Ell, m_pBrush.Get());
     }
     return S_OK;
 
@@ -43,7 +43,7 @@ HRESULT CVioletTheme::DrawBackground(Dui::Part ePart, Dui::State eState,
         if (eState == Dui::State::Normal)// 颜色调明显一点，不然看不清
         {
             m_pBrush->SetColor(App->GetColor(GPal::ScrollBarThumb));
-            m_pDC->FillRectangle(rc, m_pBrush.Get());
+            GetDC()->FillRectangle(rc, m_pBrush.Get());
             return S_OK;
         }
     }

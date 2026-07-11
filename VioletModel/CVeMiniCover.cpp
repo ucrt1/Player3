@@ -27,7 +27,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 	case WM_PAINT:
 	{
-		Dui::ELEMPAINTSTRU ps;
+		Dui::PAINTINFO ps;
 		BeginPaint(ps, wParam, lParam);
 		float fValue;
 		if (m_pec->IsActive())
@@ -36,8 +36,8 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 		BlurDC:
 			auto rcView{ GetViewRectF() };
 			eck::InflateRect(rcView, fValue, fValue);
-			m_pDC->DrawBitmap(m_pBmp, rcView);
-			m_pDC->Flush();
+			GetDC()->DrawBitmap(m_pBmp, rcView);
+			GetDC()->Flush();
 			GetWindow().CacheReserveLogSize(GetWidth(), GetHeight());
 			auto rcInTarget{ GetRectInClientF() };
 			eck::OffsetRect(rcInTarget, ps.ox, ps.oy);
@@ -49,7 +49,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 			rcView.top = (rcView.bottom - (float)CxyPlayPageArrow) / 2 +
 				(CoverAnEndValue - fValue) * 4.f/*箭头的行程因子*/;
 			rcView.bottom = rcView.top + (float)CxyPlayPageArrow;
-			m_pDC->DrawBitmap(m_pBmpCoverUp, rcView, fValue / CoverAnEndValue);
+			GetDC()->DrawBitmap(m_pBmpCoverUp, rcView, fValue / CoverAnEndValue);
 		}
 		else
 		{
@@ -59,10 +59,10 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 				goto BlurDC;
 			}
 			else
-				m_pDC->DrawBitmap(m_pBmp, GetViewRectF());
+				GetDC()->DrawBitmap(m_pBmp, GetViewRectF());
 		}
 
-		ECK_DUI_DBG_DRAW_FRAME;
+		DbgDrawFrame();
 		EndPaint(ps);
 	}
 	return 0;
@@ -101,7 +101,7 @@ LRESULT CVeMiniCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 			m_bLBtnDown = FALSE;
 			ReleaseCapture();
 			const POINT pt ECK_GET_PT_LPARAM(lParam);
-			if (eck::PtInRect(GetViewRectF(), pt))
+			if (eck::PointInRect(GetViewRectF(), pt))
 			{
 				VEN_MINICOVER_CLICK n{};
 				n.uCode = ELEN_MINICOVER_CLICK;

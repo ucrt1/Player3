@@ -8,7 +8,7 @@ LRESULT CVeCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_PAINT:
     {
-        Dui::ELEMPAINTSTRU ps;
+        Dui::PAINTINFO ps;
         BeginPaint(ps, wParam, lParam);
 
         if (m_pBmp)
@@ -38,10 +38,10 @@ LRESULT CVeCover::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 rcF.bottom = rcF.top + f;
             }
 
-            m_pDC->DrawBitmap(m_pBmp, &rcF);
+            GetDC()->DrawBitmap(m_pBmp, &rcF);
         }
 
-        ECK_DUI_DBG_DRAW_FRAME;
+        DbgDrawFrame();
         EndPaint(ps);
     }
     return 0;

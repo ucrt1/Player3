@@ -8,7 +8,7 @@ LRESULT CPage::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 #ifdef _DEBUG
 	case WM_PAINT:
 	{
-		Dui::ELEMPAINTSTRU eps;
+		Dui::PAINTINFO eps;
 		BeginPaint(eps, wParam, lParam);
 		ID2D1SolidColorBrush* pBrush;
 		GetDC()->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Blue), &pBrush);

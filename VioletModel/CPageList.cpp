@@ -63,7 +63,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
                 BASS_STREAM_DECODE, BASS_STREAM_DECODE);
 #ifdef _DEBUG
             if (!h)
-                EckDbgPrintFmt(L"%s打开失败", e.rsFile.Data());
+                EckDbgPrintFormat(L"%s打开失败", e.rsFile.Data());
 #endif
             uSecTime = h ? (UINT)round(Bass.GetLength()) : 0u;
             Bass.Close();
@@ -72,12 +72,12 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
         VltGetMusicInfo(e.rsFile.Data(), f.mi, Opt);
 
         f.uSecTime = uSecTime;
-        const auto pCover = (Tag::MUSICPIC*)f.mi.GetMainCover();
+        const auto pCover = (Tag::Picture*)f.mi.GetMainCover();
         if (pCover)
         {
             ComPtr<IStream> pStream;
-            pCover->CreateStream(pStream.RefOf());
-            eck::CreateWicBitmap(f.pWicBitmap.RefOf(), pStream.Get(),
+            pCover->CreateStream(pStream.AtSelf());
+            eck::CreateWicBitmap(f.pWicBitmap.AtSelf(), pStream.Get(),
                 m_cxIl, m_cyIl, eck::DefaultWicPixelFormat,
                 WICBitmapInterpolationModeHighQualityCubic);
             if (f.pWicBitmap.Get())
@@ -85,8 +85,8 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
                 D2D1_BITMAP_PROPERTIES1 BmpProp{};
                 BmpProp.pixelFormat = D2D1_PIXEL_FORMAT(
                     DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED);
-                m_pDC->GetDpi(&BmpProp.dpiX, &BmpProp.dpiY);
-                m_pDC->CreateBitmapFromWicBitmap(f.pWicBitmap.Get(),
+                GetDC()->GetDpi(&BmpProp.dpiX, &BmpProp.dpiY);
+                GetDC()->CreateBitmapFromWicBitmap(f.pWicBitmap.Get(),
                     BmpProp, &f.pD2DBitmap);
             }
         }
@@ -206,13 +206,13 @@ void CPageList::IlUpdateDefaultCover()
 {
     SafeRelease(m_pBmpDefCover);
     ComPtr<IWICBitmap> pDefCover;
-    eck::ScaleWicBitmap(App->GetImage(AppImage::DefaultCover), pDefCover.RefOf(),
+    eck::ScaleWicBitmap(App->GetImage(AppImage::DefaultCover), pDefCover.AtSelf(),
         m_cxIl, m_cyIl, WICBitmapInterpolationModeHighQualityCubic);
     D2D1_BITMAP_PROPERTIES1 BmpProp{};
     BmpProp.pixelFormat = D2D1_PIXEL_FORMAT(
         DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED);
-    m_pDC->GetDpi(&BmpProp.dpiX, &BmpProp.dpiY);
-    m_pDC->CreateBitmapFromWicBitmap(pDefCover.Get(), BmpProp, &m_pBmpDefCover);
+    GetDC()->GetDpi(&BmpProp.dpiX, &BmpProp.dpiY);
+    GetDC()->CreateBitmapFromWicBitmap(pDefCover.Get(), BmpProp, &m_pBmpDefCover);
 }
 
 void CPageList::IlReCreate(int idx, BOOL bForce)
@@ -223,7 +223,7 @@ void CPageList::IlReCreate(int idx, BOOL bForce)
     if (e.pImageList.Get() && !bForce)
         return;
     e.pImageList.Attach(new eck::CD2DImageList{ CxyListCover,CxyListCover });
-    e.pImageList->BindRenderTarget(m_pDC);
+    e.pImageList->BindRenderTarget(GetDC());
     e.pImageList->AddImage(m_pBmpDefCover);
 }
 
@@ -259,7 +259,7 @@ HRESULT CPageList::OnMenuAddFile(CPlayList* pList, int idxInsert)
     ECK_DUILOCK;
     EckCounter(cItems, i)
     {
-        psia->GetItemAt(i, psi.AddrOfClear());
+        psia->GetItemAt(i, psi.AtClear());
         psi->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &pszFile);
         if (pszFile)
         {

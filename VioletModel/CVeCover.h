@@ -8,7 +8,6 @@ public:
 
 	void SetBitmap(ID2D1Bitmap1* pBmp)
 	{ 
-		ECK_DUILOCK;
 		std::swap(m_pBmp, pBmp);
 		if (m_pBmp)
 			m_pBmp->AddRef();
@@ -16,4 +15,3 @@ public:
 			pBmp->Release();
 	}
 };
-

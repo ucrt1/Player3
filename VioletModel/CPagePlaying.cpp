@@ -12,15 +12,15 @@ void CPagePlaying::UpdateBlurredCover()
 	if (!cxElem || !cyElem)
 		return;
 	ComPtr<IWICBitmap> pWicCover;
-	App->Player().GetCover(pWicCover.RefOf());
+	App->Player().GetCover(pWicCover.AtSelf());
 	if (!pWicCover.Get())
 		pWicCover = App->GetImage(AppImage::DefaultCover);
 	ComPtr<ID2D1Image> pOldTarget;
-	m_pDC->GetTarget(&pOldTarget);
-	m_pDC->SetTarget(m_pBmpBlurredCover);
-	m_pDC->SetTransform(D2D1::Matrix3x2F::Identity());
-	m_pDC->BeginDraw();
-	m_pDC->Clear(D2D1::ColorF(D2D1::ColorF::White));// TODO:主题色
+	GetDC()->GetTarget(&pOldTarget);
+	GetDC()->SetTarget(m_pBmpBlurredCover);
+	GetDC()->SetTransform(D2D1::Matrix3x2F::Identity());
+	GetDC()->BeginDraw();
+	GetDC()->Clear(D2D1::ColorF(D2D1::ColorF::White));// TODO:主题色
 
 	UINT cx0, cy0;	// 原始大小
 	float cyRgn;	// 截取区域高
@@ -45,27 +45,27 @@ void CPagePlaying::UpdateBlurredCover()
 	}
 	//---缩放
 	ComPtr<IWICBitmap> pWicBmpScaled;
-	eck::ScaleWicBitmap(pWicCover.Get(), pWicBmpScaled.RefOf(), (int)cx, (int)cy,
+	eck::ScaleWicBitmap(pWicCover.Get(), pWicBmpScaled.AtSelf(), (int)cx, (int)cy,
 		WICBitmapInterpolationModeNearestNeighbor);
 	SafeRelease(m_pBmpCover);
-	m_pDC->CreateBitmapFromWicBitmap(pWicBmpScaled.Get(), &m_pBmpCover);
+	GetDC()->CreateBitmapFromWicBitmap(pWicBmpScaled.Get(), &m_pBmpCover);
 	m_Cover.SetBitmap(m_pBmpCover);
 	//---模糊 
 	ComPtr<ID2D1Effect> pEffect;
-	m_pDC->CreateEffect(CLSID_D2D1GaussianBlur, &pEffect);
+	GetDC()->CreateEffect(CLSID_D2D1GaussianBlur, &pEffect);
 	pEffect->SetInput(0, m_pBmpCover);
 	pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, 40.f);
 	pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
 	pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION,
 		D2D1_GAUSSIANBLUR_OPTIMIZATION_SPEED);
 	GetWindow().Phy2Log(pt);
-	m_pDC->DrawImage(pEffect.Get(), pt);
+	GetDC()->DrawImage(pEffect.Get(), pt);
 	//---半透明遮罩
 	m_pBrBkg->SetColor(App->GetColor(GPal::PlayPageOverlay));
-	m_pDC->FillRectangle(GetViewRectF(), m_pBrBkg);
+	GetDC()->FillRectangle(GetViewRectF(), m_pBrBkg);
 
-	m_pDC->EndDraw();
-	m_pDC->SetTarget(pOldTarget.Get());
+	GetDC()->EndDraw();
+	GetDC()->SetTarget(pOldTarget.Get());
 }
 
 void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
@@ -87,8 +87,8 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
 		m_LAArtist.SetText(mi.slArtist.FrontData());
 
 		ComPtr<Lyric::CLyric> pLyric;
-		App->Player().GetLrc(pLyric.RefOf());
-		m_Lrc.LrcInit(pLyric.Get());
+		App->Player().GetLrc(pLyric.AtSelf());
+		m_Lrc.LrcInitialize(pLyric.Get());
 	}
 	break;
 	case PlayEvt::Stop:
@@ -122,7 +122,7 @@ void CPagePlaying::OnColorSchemeChanged()
 
 	m_BTBack.SetBitmap(((CWindowMain*)GetWnd())->RealizeImage(AppImage::PlayPageDown));
 
-	const D2D1_COLOR_F crLrc[CVeLrc::CriMax]
+	const D2D1_COLOR_F crLrc[CVeLyric::CriMax]
 	{
 		App->GetColor(GPal::LrcTextNormal),
 		App->GetColor(GPal::LrcTextHighlight),
@@ -136,9 +136,9 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 	case WM_PAINT:
 	{
-		Dui::ELEMPAINTSTRU ps;
+		Dui::PAINTINFO ps;
 		BeginPaint(ps, wParam, lParam);
-		m_pDC->DrawBitmap(m_pBmpBlurredCover, ps.rcfClipInElem,
+		GetDC()->DrawBitmap(m_pBmpBlurredCover, ps.rcfClipInElem,
 			1.f, D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR, ps.rcfClipInElem);
 		EndPaint(ps);
 	}
@@ -236,7 +236,7 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
 		m_Cover.Create(nullptr, Dui::DES_VISIBLE, 0,
 			50, 50, 200, 200, this);
-		const auto pLrcRenderer = new CLrGeometryRealization{};
+		const auto pLrcRenderer = new CLyricRendererD2D{};
         m_Lrc.LrcSetRenderer(pLrcRenderer);
 		pLrcRenderer->Release();
 		m_Lrc.Create(nullptr, Dui::DES_VISIBLE, 0,
@@ -268,12 +268,12 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 		m_Lrc.SetTextFormat(pTfLrc.Get());
 		FontFactory.NewFont(pTfLrc.RefOfClear(),
 			eck::Alignment::Near, eck::Alignment::Near, 21, 500);
-		m_Lrc.SetTextFormatTrans(pTfLrc.Get());
+		m_Lrc.SetTextFormatTranslation(pTfLrc.Get());
 		m_Lrc.GetScrollBar().SetTheme(((CWindowMain*)GetWnd())->GetVioletTheme());
 		
 		SetEmptyText();
 
-		m_pDC->CreateSolidColorBrush({}, &m_pBrBkg);
+		GetDC()->CreateSolidColorBrush({}, &m_pBrBkg);
 	}
 	break;
 	case WM_DESTROY:

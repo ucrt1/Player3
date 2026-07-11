@@ -32,7 +32,7 @@ public:
     HRESULT LrcSetCurrentLine(int idx);
     void LrcSetEmptyText(std::wstring_view svEmptyText);
 
-    void SetTextFormatTrans(IDWriteTextFormat* pTf);
+    void SetTextFormatTranslation(IDWriteTextFormat* pTf);
     EckInlineNdCe auto GetTextFormatTrans() const { return (IDWriteTextFormat*)0; }
 
     void SetLyric(Lyric::CLyric* pLrc);

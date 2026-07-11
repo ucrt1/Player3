@@ -6,7 +6,7 @@ private:
 public:
     HRESULT RealizeForDC(ID2D1DeviceContext* pDC) noexcept override
     {
-        pDC->CreateSolidColorBrush({}, m_pBrush.AddrOfClear());
+        pDC->CreateSolidColorBrush({}, m_pBrush.AtClear());
         return __super::RealizeForDC(pDC);
     }
     HRESULT DrawBackground(Dui::Part ePart, Dui::State eState,

@@ -55,12 +55,15 @@ using eck::PCBYTE;
 using eck::SafeRelease;
 using eck::ComPtr;
 using eck::RefPtr;
+using eck::RcPtr;
 
 namespace Dui = eck::Dui;
 namespace Tag = eck::MediaTag;
 namespace Lyric = eck::Lyric;
 namespace Kw = eck::Kw;
 using namespace std::literals;
+
+using Dui::EagPoint;
 
 #include "Bass\bass.h"
 #include "Bass\bass_fx.h"

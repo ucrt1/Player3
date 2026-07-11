@@ -6,8 +6,8 @@ class CDtLrGeometryRealization : public CDtLyricRendererBase
 private:
     struct LINE
     {
-        ComPtr<IDWriteTextLayout> pLayout;
-        ComPtr<IDWriteTextLayout> pLayoutTrans;
+        ComPtr<IDWriteTextLayout> pTlMain;
+        ComPtr<IDWriteTextLayout> pTlTranslation;
         ComPtr<ID2D1GeometryRealization> pGrS;
         ComPtr<ID2D1GeometryRealization> pGrSTrans;
         ComPtr<ID2D1GeometryRealization> pGrF;
@@ -32,7 +32,7 @@ private:
     LINE m_Line[2]{};
     STATIC_LINE m_StaticLine{};
 
-    ComPtr<ID2D1DeviceContext1> m_pDC{};
+    ComPtr<ID2D1DeviceContext1> GetDC(){};
     ComPtr<ID2D1SolidColorBrush> m_pBrush{};
 
     ComPtr<ID2D1GeometryRealization> m_pGrEmptyText{};
@@ -44,7 +44,7 @@ private:
     void DrawTextGeometry(ID2D1GeometryRealization* pGrS, ID2D1GeometryRealization* pGrF,
         float dx, float dy, size_t idxFill);
 public:
-    HRESULT LrInit(const LRD_INIT& Opt) override;
+    HRESULT LrInitialize(const LRD_INIT& Opt) override;
     void LrBeginDraw() override {}
     void LrEndDraw() override {}
     void LrDraw(const LDRD_DRAW& Opt) override;

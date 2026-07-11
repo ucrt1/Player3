@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "CVeLrc.h"
+#include "CLrGeometryRealization.h"
 
 enum
 {
@@ -8,53 +9,64 @@ enum
     T_MOUSEIDLEMAX = 4500,
 };
 
-constexpr inline float AnDurLrcSelBkg{ 100.f };         // 歌词选中背景动画时长
-constexpr inline float AnDurLrcScrollExpand{ 200.f };   // 滚动展开动画时长
-constexpr inline float AnDurLrcDelay{ 600.f };          // 每个项目的延迟动画时长
-constexpr inline float DurMaxItemDelay{ 310.f };        // 延迟间隔
+constexpr inline float DurationSelectionBack{ 100.f };  // 歌词选中背景动画时长
+constexpr inline float DurationScrollExpand{ 200.f };   // 滚动展开动画时长
+constexpr inline float DurationDelay{ 600.f };          // 每个项目的延迟动画时长
+constexpr inline float DurationMaxItemDelay{ 310.f };   // 延迟间隔
 
-void CVeLrc::ScrAnProc(float fPos, float fPrevPos)
+void CVeLyric::ScrAnimationCallback(const Dui::IScrollController::SCC_CALLBACK_DATA& Data) noexcept
 {
     if (IsEmpty())
         return;
-    const auto iMs = m_psv->TlGetCurrentInterval();
+
+    const auto fMaxScale = GetTheme()->GetMetric(IdMeMaximumScale, DefaultMaximumScale);
+    auto& sv = m_SB.GetScrollView();// HACK TlGetCurrentInterval改为const
     if (m_bEnlarging)
     {
-        m_fAnValue = eck::Easing::OutCubic(m_psv->GetCurrentTime(),
-            1.f, m_pRenderer->GetMaxScale() - 1.f, m_psv->GetDuration());
-        if (m_psv->GetCurrentTime() >= m_psv->GetDuration())
+        m_fAnValue = eck::Easing::OutCubic(
+            sv.GetCurrentTime(),
+            1.f,
+            fMaxScale - 1.f,
+            sv.GetDuration());
+        if (sv.GetCurrentTime() >= sv.GetDuration())
         {
             m_bEnlarging = FALSE;
             m_idxPrevAnItem = -1;
-            m_fAnValue = m_pRenderer->GetMaxScale();
+            m_fAnValue = fMaxScale;
         }
     }
 
-    EckAssert(AnDurLrcScrollExpand < (float)m_psv->GetDuration());
+    EckAssert(DurationScrollExpand < (float)sv.GetDuration());
     if (m_bScrollExpand)
     {
+        const auto ms = sv.TlGetCurrentInterval();
         if (m_bSeEnlarging)
-            m_msScrollExpand += iMs;
+            m_msScrollExpand += ms;
         else
-            m_msScrollExpand -= iMs;
-        m_kScrollExpand = eck::Easing::Linear(m_msScrollExpand, 1.f,
-            m_pRenderer->GetMaxScale() - 1.f, AnDurLrcScrollExpand);
-        if (m_msScrollExpand >= AnDurLrcScrollExpand ||
+            m_msScrollExpand -= ms;
+
+        m_kScrollExpand = eck::Easing::Linear(
+            m_msScrollExpand,
+            1.f,
+            fMaxScale - 1.f,
+            DurationScrollExpand);
+
+        if (m_msScrollExpand >= DurationScrollExpand ||
             m_msScrollExpand <= 0.f)
         {
             m_bScrollExpand = FALSE;
-            m_kScrollExpand = m_bSeEnlarging ? m_pRenderer->GetMaxScale() : 1.f;
-            m_msScrollExpand = m_bSeEnlarging ? AnDurLrcScrollExpand : 0.f;
+            m_kScrollExpand = m_bSeEnlarging ? fMaxScale : 1.f;
+            m_msScrollExpand = m_bSeEnlarging ? DurationScrollExpand : 0.f;
         }
     }
 
-    ScrDoItemScroll(fPos);
+    ScrDoItemScroll(Data.fPos);
 
-    ItmReCalcTop();
+    ItmReCalculateTop();
     Invalidate();
 }
 
-void CVeLrc::ItmReCalcTop()
+void CVeLyric::ItmReCalculateTop() noexcept
 {
     if (IsEmpty())
     {
@@ -71,20 +83,19 @@ void CVeLrc::ItmReCalcTop()
         m_idxTop = (int)m_vItem.size() - 1;
 }
 
-void CVeLrc::MiBeginDetect()
+void CVeLyric::MiBeginDetect() noexcept
 {
     if (!m_tMouseIdle)
         SetTimer(IDT_MOUSEIDLE, TE_MOUSEIDLE);
     m_tMouseIdle = T_MOUSEIDLEMAX;
 }
 
-int CVeLrc::ItmHitTest(POINT pt)
+int CVeLyric::ItmHitTest(Kw::Vec2 pt) noexcept
 {
-    D2D1_RECT_F rc;
     for (int i = m_idxTop; i < (int)m_vItem.size(); ++i)
     {
-        ItmGetRect(i, rc);
-        if (eck::PtInRect(rc, pt))
+        const auto rc = ItmGetRect(i);
+        if (eck::PointInRect(rc, pt))
             return i;
         if (rc.top > GetHeight())
             break;
@@ -92,7 +103,7 @@ int CVeLrc::ItmHitTest(POINT pt)
     return -1;
 }
 
-float CVeLrc::ItmPaint(int idx)
+float CVeLyric::ItmPaint(int idx) noexcept
 {
     const auto& e = m_vItem[idx];
     LRD_DRAW Opt
@@ -103,6 +114,8 @@ float CVeLrc::ItmPaint(int idx)
         .y = e.y,
         .cx = e.cx,
         .cy = e.cy,
+        .cxMain = e.cxMain,
+        .cxTranslation = e.cxTranslation,
         .fScale = m_fAnValue,
         .kAnSelBkg = e.kAnSelBkg,
         .kScrollExpand = m_kScrollExpand,
@@ -118,41 +131,35 @@ float CVeLrc::ItmPaint(int idx)
         Opt.uFlags |= LRIF_CURR_AN;
 
     if (e.bSel)
-        if (idx == m_idxHot)
-            Opt.eState = Dui::State::HotSelected;
-        else
-            Opt.eState = Dui::State::Selected;
+        Opt.ss = SsSelected;
     else
         if (idx == m_idxHot || e.bAnSelBkg)
-            Opt.eState = Dui::State::Hot;
+            Opt.ss = SsHot;
         else
-            Opt.eState = Dui::State::None;
+            Opt.ss = SsNormal;
 
-    m_pRenderer->LrItmDraw(Opt);
+    m_pRenderer->LrDrawItem(Opt);
 
 #ifdef _DEBUG
-    WCHAR szDbg[eck::CchI32ToStrBufNoRadix2];
-    const auto cchDbg = swprintf_s(szDbg, L"%d", idx);
-    D2D1_RECT_F rcDbg;
-    ItmGetRect(idx, rcDbg);
-    ComPtr<ID2D1SolidColorBrush> pBrDbg;
-    m_pDC->CreateSolidColorBrush(D2D1::ColorF{ (ItmIsDelaying() && ItmInDelayRange(idx)) ?
-        D2D1::ColorF::Green : D2D1::ColorF::Red }, &pBrDbg);
-    m_pDC->DrawTextW(szDbg, cchDbg, GetTextFormat(), rcDbg, pBrDbg.Get());
+    {
+        WCHAR szDbg[eck::TcvIntBufferSize<int>()];
+        PWCH pEnd;
+        eck::TcvFromInt(EckArgString(szDbg), idx, 10, TRUE, &pEnd);
+        const auto cchDbg = int(pEnd - szDbg);
+
+        GetDC()->DrawTextW(
+            szDbg, cchDbg,
+            GetTextFormat().Get(),
+            ItmGetRect(idx),
+            GetWindow().CcSetBrushColor(D2D1::ColorF{
+                (ItmIsDelaying() && ItmInDelayRange(idx)) ?
+                D2D1::ColorF::Green : D2D1::ColorF::Red }));
+    }
 #endif
     return Opt.y + Opt.cy + m_cyLinePadding;
 }
 
-void CVeLrc::ItmGetRect(int idx, _Out_ D2D1_RECT_F& rc)
-{
-    const auto& e = m_vItem[idx];
-    rc.left = e.x;
-    rc.top = e.y;
-    rc.right = e.x + e.cx;
-    rc.bottom = rc.top + e.cy;
-}
-
-int CVeLrc::ItmIndexFromY(float y)
+int CVeLyric::ItmIndexFromY(float y) const noexcept
 {
     if (IsEmpty())
         return -1;
@@ -178,14 +185,12 @@ int CVeLrc::ItmIndexFromY(float y)
     }
 }
 
-void CVeLrc::ItmInvalidate(int idx)
+void CVeLyric::ItmInvalidate(int idx) noexcept
 {
-    D2D1_RECT_F rc;
-    ItmGetRect(idx, rc);
-    Invalidate(rc);
+    Invalidate(ItmGetRect(idx));
 }
 
-void CVeLrc::SeBeginExpand(BOOL bEnlarge)
+void CVeLyric::MiBeginScrollExpand(BOOL bEnlarge) noexcept
 {
     const auto bWake = !IsValid();
     if (!m_bScrollExpand)
@@ -194,22 +199,21 @@ void CVeLrc::SeBeginExpand(BOOL bEnlarge)
         if (m_bSeEnlarging = bEnlarge)
             m_msScrollExpand = 0.f;
         else
-            m_msScrollExpand = AnDurLrcScrollExpand;
+            m_msScrollExpand = DurationScrollExpand;
     }
     if (bWake)
         GetWindow().KctWake();
 }
 
-void CVeLrc::ItmDelayPrepare(float dy)
+void CVeLyric::ItmDelayPrepare(float dy) noexcept
 {
     float y;
     m_bItemAnDelay = TRUE;// 马上要启动滚动条时间线，无需唤醒渲染线程
     m_bDelayScrollUp = (dy > 0.f);
     int i;
-    const auto& ItemCurr = m_vItem[m_idxCurr];
+    const auto& Curr = m_vItem[m_idxCurr];
     // 当前（含）以上
-    y = ItmGetCurrentItemTarget() - ItemCurr.cy / 2.f
-        + ItemCurr.cy + m_cyLinePadding;
+    y = ItmGetCurrentItemTarget() - Curr.cy / 2.f + Curr.cy + m_cyLinePadding;
     m_idxDelayBegin = 0;
     for (int i = m_idxCurr; i >= 0; --i)
     {
@@ -227,7 +231,7 @@ void CVeLrc::ItmDelayPrepare(float dy)
         }
     }
     // 当前以下
-    y = ItemCurr.yAnDelayDst + ItemCurr.cy + m_cyLinePadding;
+    y = Curr.yAnDelayDst + Curr.cy + m_cyLinePadding;
     m_idxDelayEnd = (int)m_vItem.size() - 1;
     for (i = m_idxCurr + 1; i < (int)m_vItem.size(); ++i)
     {
@@ -246,23 +250,23 @@ void CVeLrc::ItmDelayPrepare(float dy)
     }
 }
 
-void CVeLrc::ItmDelayComplete()
+void CVeLyric::ItmDelayComplete() noexcept
 {
     m_idxDelayBegin = m_idxDelayEnd = -1;
     m_bItemAnDelay = FALSE;
 }
 
-BOOL CVeLrc::ItmIsDelayEnd(const ITEM& e)
+BOOL CVeLyric::ItmIsDelayEnd(const ITEM& e) noexcept
 {
     const auto cy = GetHeight();
-    const auto msDelay = DurMaxItemDelay * ((m_idxDelayEnd - m_idxDelayBegin + 1) / 10.f);
+    const auto msDelay = DurationMaxItemDelay * ((m_idxDelayEnd - m_idxDelayBegin + 1) / 10.f);
     if (m_bDelayScrollUp)
         return e.msDelay >= (msDelay * ((e.yAnDelaySrc - m_yMinMaxDelayPos) / cy));
     else
         return e.msDelay >= (msDelay * ((m_yMinMaxDelayPos - e.yAnDelaySrc) / cy));
 }
 
-LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
+LRESULT CVeLyric::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -286,20 +290,19 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         if (m_vItem.empty())
             break;
-        const POINT pt ECK_GET_PT_LPARAM(lParam);
+        const auto& pt = EagPoint(lParam);
         int idx = ItmHitTest(pt);
         if (idx != m_idxHot)
         {
             std::swap(idx, m_idxHot);
             if (idx >= 0)
-            {
                 m_vItem[idx].OnKillHot();
-                IsbWakeRenderThread();
-            }
             if (m_idxHot >= 0)
-            {
                 m_vItem[m_idxHot].OnSetHot();
-                IsbWakeRenderThread();
+            if (!m_bAnSelBkg && (idx >= 0 || m_idxHot >= 0))
+            {
+                m_bAnSelBkg = TRUE;
+                GetWindow().KctWake();
             }
         }
     }
@@ -316,7 +319,11 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             if (idx >= 0)
             {
                 m_vItem[idx].OnKillHot();
-                IsbWakeRenderThread();
+                if (!m_bAnSelBkg)
+                {
+                    m_bAnSelBkg = TRUE;
+                    GetWindow().KctWake();
+                }
             }
         }
     }
@@ -327,10 +334,10 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         if (m_vItem.empty())
             break;
         if (!MiIsManualScroll())
-            SeBeginExpand(TRUE);
+            MiBeginScrollExpand(TRUE);
         ItmDelayComplete();
         ScrManualScrolling();
-        m_psv->OnMouseWheel2(-GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
+        m_SB.GetScrollView().OnMouseWheel2(-GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA);
         GetWindow().KctWake();
     }
     return 0;
@@ -340,7 +347,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         SetFocus();
         if (m_vItem.empty())
             break;
-        const POINT pt ECK_GET_PT_LPARAM(lParam);
+        const auto& pt = EagPoint(lParam);
         int idx = ItmHitTest(pt);
         if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
         {
@@ -439,12 +446,12 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             case Dui::ENC_SCROLL:
             {
                 if (!MiIsManualScroll())
-                    SeBeginExpand(TRUE);
+                    MiBeginScrollExpand(TRUE);
                 ItmDelayComplete();
                 ScrManualScrolling();
-                m_psv->InterruptAnimation();
-                ScrDoItemScroll(m_psv->GetPosition());
-                ItmReCalcTop();
+                m_SB.GetScrollView().InterruptAnimation();
+                ScrDoItemScroll(m_SB.GetTrackPosition());
+                ItmReCalculateTop();
                 Invalidate();
             }
             return TRUE;
@@ -498,7 +505,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                     y -= (e.cy + m_cyLinePadding);
                     e.y = e.yNoDelay = y;
                 }
-                m_psv->SetPosition(-m_vItem.front().y);
+                m_SB.SetTrackPosition(-m_vItem.front().y);
                 y = CurrItem.yNoDelay + CurrItem.cy + m_cyLinePadding;
                 for (int i = idxCurr + 1; i < (int)m_vItem.size(); ++i)
                 {
@@ -507,34 +514,27 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                     y += (e.cy + m_cyLinePadding);
                 }
             }
-            ItmReCalcTop();
+            ItmReCalculateTop();
         }
     }
     break;
 
     case WM_SETFONT:
-        m_pRenderer->SetTextFormatMain(GetTextFormat());
+        // TODO: 无效化缓存
         break;
 
     case WM_CREATE:
     {
         GetWindow().KctRegisterTimeLine(this);
 
-        const LRD_INIT InitOpt{ .pD2DContext = m_pDC, };
-        m_pRenderer->LrInit(InitOpt);
-        m_pRenderer->SetTheme(GetTheme());
+        m_pRenderer = std::make_unique<CLyricRendererD2D>();
+        m_pRenderer->LrInitialize(this);
 
-        m_SB.Create(nullptr, 0, 0,
-            0, 0, GetTheme()->GetMetrics(Dui::Metrics::CxVScroll), 0,
-            this);
-        m_psv = m_SB.GetScrollView();
-        m_psv->AddRef();
-        m_psv->SetMinThumbSize(Dui::CxyMinScrollThumb);
-        m_psv->SetCallback([](float fPos, float fPrevPos, LPARAM lParam)
+        m_SB.Create(nullptr, 0, 0, 0, 0, 0, 0, this);
+        m_SB.SccSetCallback([](const Dui::IScrollController::SCC_CALLBACK_DATA& Data)
             {
-                ((CVeLrc*)lParam)->ScrAnProc(fPos, fPrevPos);
-            }, (LPARAM)this);
-        m_psv->SetDelta(80);
+                ((CVeLyric*)Data.pUser)->ScrAnimationCallback(Data);
+            }, this);
     }
     break;
 
@@ -545,7 +545,7 @@ LRESULT CVeLrc::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     return __super::OnEvent(uMsg, wParam, lParam);
 }
 
-HRESULT CVeLrc::LrcSetCurrentLine(int idxCurr)
+HRESULT CVeLyric::LrcSetCurrentLine(int idxCurr) noexcept
 {
     if (idxCurr < 0)
         return E_BOUNDS;
@@ -569,31 +569,31 @@ HRESULT CVeLrc::LrcSetCurrentLine(int idxCurr)
         m_idxCurrAnItem = m_idxCurr;
         const auto& e = m_vItem[m_idxCurr];
         const auto dy = (e.yNoDelay + e.cy / 2.f) - ItmGetCurrentItemTarget();
-        m_psv->InterruptAnimation();
-        m_psv->SmoothScrollDelta(dy);
+        m_SB.GetScrollView().InterruptAnimation();
+        m_SB.GetScrollView().SmoothScrollDelta(dy);
         ItmDelayPrepare(dy);
         GetWindow().KctWake();
     }
     return S_OK;
 }
 
-HRESULT CVeLrc::LrcInit(RefPtr<Lyric::CLyric> pLyric)
+HRESULT CVeLyric::LrcInitialize(RefPtr<Lyric::CLyric> pLyric) noexcept
 {
     m_pLrc = pLyric;
     m_idxCurr = -1;
-    m_pRenderer->LrItmSetCount(m_pLrc->MgGetLineCount());
+    m_pRenderer->LrSetItemCount(m_pLrc->MgGetLineCount());
     ItmLayout();
     ItmDelayComplete();
     if (!IsEmpty())
         ScrFixItemPosition();
-    ItmReCalcTop();
+    ItmReCalculateTop();
     Invalidate();
     return S_OK;
 }
 
-void CVeLrc::LrcClear()
+void CVeLyric::LrcClear() noexcept
 {
-    SafeRelease(m_pLrc);
+    m_pLrc.Clear();
     m_vItem.clear();
     m_idxTop = -1;
     m_idxHot = -1;
@@ -607,12 +607,12 @@ void CVeLrc::LrcClear()
     Invalidate();
 }
 
-void CVeLrc::SetTextFormatTrans(IDWriteTextFormat* pTf)
+void CVeLyric::SetTextFormatTranslation(IDWriteTextFormat* pTf) noexcept
 {
-    m_pRenderer->SetTextFormatTrans(pTf);
+    m_pTfTranslation = pTf;
 }
 
-void CVeLrc::TlTick(int iMs) noexcept
+void CVeLyric::TlTick(int iMs) noexcept
 {
     BOOL bAn{};
     int i = (m_bDelayScrollUp ? 0 : (int)m_vItem.size() - 1);
@@ -626,7 +626,7 @@ void CVeLrc::TlTick(int iMs) noexcept
             else
                 e.msAnSelBkg += iMs;
             e.kAnSelBkg = eck::Easing::Linear(
-                e.msAnSelBkg, 0.f, 1.f, AnDurLrcSelBkg);
+                e.msAnSelBkg, 0.f, 1.f, DurationSelectionBack);
             if (e.kAnSelBkg >= 1.f || e.kAnSelBkg <= 0.f)
                 e.bAnSelBkg = FALSE;
             else
@@ -638,7 +638,7 @@ void CVeLrc::TlTick(int iMs) noexcept
             {
                 e.msAnDelay += iMs;
                 auto k = eck::Easing::OutExpo(
-                    e.msAnDelay, 0.f, 1.f, AnDurLrcDelay);
+                    e.msAnDelay, 0.f, 1.f, DurationDelay);
                 // VLTBUG 250822
                 // 缓动函数内部的钳位会导致某些曲线结束位置会产生较大的跳变，
                 // ECK已修改，取消了所有钳位，并且在外部应使用k作为终点条件
@@ -664,8 +664,7 @@ void CVeLrc::TlTick(int iMs) noexcept
                     if (m_idxDelayEnd < m_idxDelayBegin)
                         ItmDelayComplete();
                 }
-                D2D1_RECT_F rc;
-                ItmGetRect(i, rc);
+                auto rc = ItmGetRect(i);
                 e.y = e.yAnDelaySrc + (e.yAnDelayDst - e.yAnDelaySrc) * k;
                 rc.top = std::min(rc.top, e.y);
                 rc.bottom = std::max(rc.bottom, e.y + e.cy);
@@ -676,10 +675,10 @@ void CVeLrc::TlTick(int iMs) noexcept
     }
     m_bAnSelBkg = bAn;
     if (m_bItemAnDelay)
-        ItmReCalcTop();
+        ItmReCalculateTop();
 }
 
-void CVeLrc::ScrAutoScrolling()
+void CVeLyric::ScrAutoScrolling() noexcept
 {
     if (m_idxCurr != m_idxCurrAnItem && m_idxCurrAnItem >= 0)
     {
@@ -689,15 +688,15 @@ void CVeLrc::ScrAutoScrolling()
     }
     const auto& CurrItem = m_idxCurr < 0 ? m_vItem.front() : m_vItem[m_idxCurr];
     const auto dy = (CurrItem.yNoDelay + CurrItem.cy / 2.f) - ItmGetCurrentItemTarget();
-    m_psv->InterruptAnimation();
-    m_psv->SmoothScrollDelta(dy);
-    SeBeginExpand(FALSE);
+    m_SB.GetScrollView().InterruptAnimation();
+    m_SB.GetScrollView().SmoothScrollDelta(dy);
+    MiBeginScrollExpand(FALSE);
     if (m_idxCurr >= 0)
         ItmDelayPrepare(dy);
     GetWindow().KctWake();
 }
 
-void CVeLrc::ItmLayout()
+void CVeLyric::ItmLayout() noexcept
 {
     const float cx = GetWidth(), cy = GetHeight();
     if (cx <= 0.f || cy <= 0.f)
@@ -711,31 +710,75 @@ void CVeLrc::ItmLayout()
         m_SB.SetVisible(FALSE);
         return;
     }
+
     const auto cLrc = m_pLrc->MgGetLineCount();
-    const auto yInit = (float)-m_psv->GetPosition();
+    const auto yInit = (float)-m_SB.GetTrackPosition();
+    DWRITE_TEXT_METRICS tm;
+
     float y = yInit;
-    LRD_TEXT_METRICS Metrics;
+    float cxItem, cyItem;
+
+    const auto fMaxScale = GetTheme()->GetMetric(IdMeMaximumScale, DefaultMaximumScale);
+    const auto cxyItemMargin = GetTheme()->GetMetric(IdMeItemMargin, DefaultItemMargin);
+    const auto dPadding = GetTheme()->GetMetric(
+        IdMeMainToTranslationDistance, DefaultMainToTranslationDistance);
+    const float cxMax = (cx - cxyItemMargin * 2.f) / fMaxScale;
 
     m_vItem.resize(cLrc);
 
     EckCounter(cLrc, i)
     {
         auto& e = m_vItem[i];
-        const auto& Lrc = m_pLrc->MgAtLine(i);
+        const auto& Line = m_pLrc->MgAtLine(i);
 
-        m_pRenderer->LrItmUpdateText(i, Lrc, Metrics);
+        e.bCacheValid = TRUE;
+        e.y = y;
+        e.cx = 0.f;
+        e.cy = 0.f;
 
-        e.cx = Metrics.cxMain;
-        e.cy = Metrics.cyMain;
-        if (Metrics.cxTrans)
+        // -- Main
+
+        eck::g_pDwFactory->CreateTextLayout(
+            Line.pszLrc, Line.cchLrc,
+            GetTextFormat().Get(),
+            cxMax, cy,
+            e.pTlMain.AtClear());
+        if (e.pTlMain)
         {
-            e.cxTrans = Metrics.cxTrans;
-            e.cx = std::max(e.cx, e.cxTrans);
-            e.cy += (Metrics.cyTrans + m_pRenderer->GetMainToTransDistance());
+            e.pTlMain->GetMetrics(&tm);
+            e.cx = std::max(e.cx, tm.width);
+            e.cy += tm.height;
         }
+
+        // -- Translation
+
+        if (Line.pszTranslation && Line.cchTranslation)
+        {
+            eck::g_pDwFactory->CreateTextLayout(
+                Line.pszTranslation, Line.cchTranslation,
+                m_pTfTranslation.Get(),
+                cxMax, cy,
+                e.pTlTranslation.AtClear());
+            if (e.pTlTranslation)
+            {
+                e.pTlTranslation->GetMetrics(&tm);
+                e.cx = std::max(e.cx, tm.width);
+                e.cy += (tm.height + dPadding);
+            }
+        }
+
+        // --
+
+        e.cx *= fMaxScale;
+        e.cy *= fMaxScale;
+        e.cx += (cxyItemMargin * 2.f);
+        e.cy += (cxyItemMargin * 2.f);
 
         switch (m_eAlignH)
         {
+        case eck::Alignment::Near:
+            e.x = 0.f;
+            break;
         case eck::Alignment::Center:
             e.x = (cx - e.cx) / 2.f;
             break;
@@ -743,29 +786,25 @@ void CVeLrc::ItmLayout()
             e.x = cx - e.cx;
             break;
         }
-        e.cx *= m_pRenderer->GetMaxScale();
-        e.cy *= m_pRenderer->GetMaxScale();
-        e.cx += (m_pRenderer->GetItemMargin() * 2.f);
-        e.cy += (m_pRenderer->GetItemMargin() * 2.f);
         y += (e.cy + m_cyLinePadding);
     }
 
-    m_psv->SetMinimum(-cy / 3.f - m_vItem.front().cy);
-    m_psv->SetMaximum(y - yInit - m_cyLinePadding + cy / 3.f * 2.f);
-    m_psv->SetPage(cy);
-    m_psv->SetViewSize(cy);
-    m_SB.SetVisible(m_psv->IsVisible());
+    m_SB.SetRange(
+        -cy / 3.f - m_vItem.front().cy,
+        y - yInit - m_cyLinePadding + cy / 3.f * 2.f);
+    m_SB.SetPage(cy);
+    m_SB.SetVisible(m_SB.GetScrollView().IsVisible());
 }
 
-void CVeLrc::ScrManualScrolling()
+void CVeLyric::ScrManualScrolling() noexcept
 {
     MiBeginDetect();
     m_bEnlarging = FALSE;
     m_idxPrevAnItem = -1;
-    m_fAnValue = m_pRenderer->GetMaxScale();
+    m_fAnValue = GetTheme()->GetMetric(IdMeMaximumScale, DefaultMaximumScale);
 }
 
-void CVeLrc::ScrDoItemScroll(float fPos)
+void CVeLyric::ScrDoItemScroll(float fPos) noexcept
 {
     float y = -fPos;
     auto& Front = m_vItem.front();
@@ -782,28 +821,28 @@ void CVeLrc::ScrDoItemScroll(float fPos)
     }
 }
 
-void CVeLrc::ScrFixItemPosition()
+void CVeLyric::ScrFixItemPosition() noexcept
 {
     const auto& e = m_vItem.front();
     const auto iRealPos = (int)-e.y;
-    if (iRealPos < m_psv->GetMinimum())
-        ScrDoItemScroll(m_psv->GetPosition());
-    else if (iRealPos > m_psv->GetMaxWithPage())
-        ScrDoItemScroll(m_psv->GetPosition());
+    if (iRealPos < m_SB.GetMinimum())
+        ScrDoItemScroll(m_SB.GetTrackPosition());
+    else if (iRealPos > m_SB.GetScrollView().GetMaxWithPage())
+        ScrDoItemScroll(m_SB.GetTrackPosition());
 }
 
 
-void CVeLrc::ITEM::OnSetHot()
+void CVeLyric::ITEM::OnSetHot() noexcept
 {
     if (!bAnSelBkg)
     {
         bAnSelBkg = TRUE;
-        msAnSelBkg = AnDurLrcSelBkg;
+        msAnSelBkg = DurationSelectionBack;
     }
     bAnSelBkgEnlarge = TRUE;
 }
 
-void CVeLrc::ITEM::OnKillHot()
+void CVeLyric::ITEM::OnKillHot() noexcept
 {
     if (!bAnSelBkg)
     {
