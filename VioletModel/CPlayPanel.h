@@ -3,16 +3,14 @@
 
 class CPlayPanel :public Dui::CElement
 {
-	friend class CWindowMain;
+    friend class CWindowMain;
 private:
-	ID2D1SolidColorBrush* m_pBrush{};
+    CVeMiniCover m_Cover{};
+    Dui::CLabel m_LATitle{};
+    Dui::CLabel m_LAArtist{};
+    Dui::CLabel m_LATime{};
 
-	CVeMiniCover m_Cover{};
-	Dui::CLabel m_LATitle{};
-	Dui::CLabel m_LAArtist{};
-	Dui::CLabel m_LATime{};
-
-	void OnPlayEvent(const PLAY_EVT_PARAM& e);
+    void OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept;
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 };

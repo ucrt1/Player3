@@ -2,11 +2,11 @@
 #include "CWndMain.h"
 
 
-void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
+void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
 {
     switch (e.eEvent)
     {
-    case PlayEvt::CommTick:
+    case PlayEvent::CommonTick:
     {
         const auto& Player = App->Player();
         const auto lfCurrTime = Player.GetCurrentTime();
@@ -17,9 +17,9 @@ void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e)
         m_LATime.Invalidate();
     }
     break;
-    case PlayEvt::Play:
+    case PlayEvent::Play:
     {
-        const auto& mi = App->Player().GetMusicInfo();
+        const auto& mi = App->Player().GetMusicSimpleData();
         m_LATitle.SetText(mi.rsTitle.Data());
         m_LAArtist.SetText(mi.slArtist.FrontData());
     }
@@ -35,35 +35,36 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         Dui::PAINTINFO ps;
         BeginPaint(ps, wParam, lParam);
-        m_pBrush->SetColor(App->GetColor(GPal::PlayPanelBk));
-        GetDC()->FillRectangle(ps.rcfClipInElem, m_pBrush);
+        GetDC()->FillRectangle(ps.rcClipInEle, GetWindow().CcSetBrushColor(
+            App->GetColor(GPal::PlayPanelBk)));
         EndPaint(ps);
     }
     return 0;
 
     case WM_SETFONT:
     {
-        m_LAArtist.SetTextFormat(GetTextFormat());
-        m_LATime.SetTextFormat(GetTextFormat());
+        m_LAArtist.SetTextFormat(GetTextFormat().Get());
+        m_LATime.SetTextFormat(GetTextFormat().Get());
     }
     break;
 
     case Dui::EWM_COLORSCHEMECHANGED:
     {
-        D2D1_COLOR_F cr;
-        GetTheme()->GetSysColor(Dui::SysColor::Text, cr);
-        m_LATitle.SetColor(cr);
-        m_LATitle.UpdateFadeColor();
-        m_LAArtist.SetColor(cr);
-        m_LAArtist.UpdateFadeColor();
+        // FIXME
+        //D2D1_COLOR_F cr;
+        //GetTheme()->GetSysColor(Dui::SysColor::Text, cr);
+        //m_LATitle.SetColor(cr);
+        //m_LATitle.UpdateFadeColor();
+        //m_LAArtist.SetColor(cr);
+        //m_LAArtist.UpdateFadeColor();
     }
     break;
 
     case WM_CREATE:
     {
-        App->Player().GetSignal().Connect(this, &CPlayPanel::OnPlayEvent);
-        GetDC()->CreateSolidColorBrush({}, &m_pBrush);
-        const auto pWnd = (CWindowMain*)GetWnd();
+        App->Player().GetEventChain().Connect(this, &CPlayPanel::OnPlayEvent);
+
+        const auto pWnd = &GetWindow();
 
         ComPtr<IDWriteTextFormat> pTfTitle;
         App->GetFontFactory().NewFont(pTfTitle.AtSelf(), eck::Alignment::Near,
@@ -71,7 +72,7 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         pTfTitle->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
         float x = DLeftMiniCover;
-        m_Cover.Create(nullptr, Dui::DES_VISIBLE | Dui::DES_NOTIFY_TO_WND, 0,
+        m_Cover.Create(nullptr, Dui::DES_VISIBLE | Dui::DES_NOTIFY_WND, 0,
             x, DTopMiniCover, CxyMiniCover, CxyMiniCover, this, pWnd);
         x += (CxyMiniCover + CxPaddingPlayPanelText);
 
@@ -95,10 +96,6 @@ LRESULT CPlayPanel::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             x, DTopTime, CxMaxTime, CyPlayPanelText, this, pWnd);
     }
     break;
-
-    case WM_DESTROY:
-        SafeRelease(m_pBrush);
-        break;
     }
     return __super::OnEvent(uMsg, wParam, lParam);
 }

@@ -10,7 +10,7 @@ EckInlineNdCe AppImage AutoNextModeToGImg(AutoNextMode eMode) noexcept
     {
     case AutoNextMode::ListLoop: return AppImage::Circle;
     case AutoNextMode::List: return AppImage::ArrowRight3;
-    case AutoNextMode::Radom: return AppImage::ArrowCross;
+    case AutoNextMode::Random: return AppImage::ArrowCross;
     case AutoNextMode::SingleLoop: return AppImage::CircleOne;
     case AutoNextMode::Single: return AppImage::ArrowRight1;
     }
@@ -28,7 +28,7 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
 {
     App->SetDarkMode(ShouldAppsUseDarkMode());
     CBass::Init();
-    App->Player().GetSignal().Connect(this, &CWindowMain::OnPlayEvent);
+    App->Player().GetEventChain().Connect(this, &CWindowMain::OnPlayEvent);
 
     KctRegisterTimeLine(this);
 
@@ -122,7 +122,7 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
             {
                 const auto pList = App->Player().GetList();
                 if (pList)
-                    pList->FlRmShuffle();
+                    pList->FlShuffleRandom();
             }
             return 0;
         });
@@ -204,7 +204,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
 {
     switch (e.eEvent)
     {
-    case PlayEvt::CommTick:
+    case PlayEvent::CommonTick:
     {
         m_msProgTimer += TE_COMM_TICK;
         if (m_msProgTimer >= TE_PROG)
@@ -217,7 +217,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         SmtcOnCommonTick();
     }
     break;
-    case PlayEvt::Play:
+    case PlayEvent::Play:
     {
         m_msProgTimer = 0;
         OnCoverUpdate();
@@ -235,7 +235,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         m_WndTbGhost.SetIconicThumbnail();
     }
     [[fallthrough]];
-    case PlayEvt::Resume:
+    case PlayEvent::Resume:
     {
         SetTimer(Handle, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
         m_BTPlay.SetIcon(RealizeImage2(AppImage::Pause));
@@ -244,14 +244,14 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
         SmtcUpdateState();
     }
     break;
-    case PlayEvt::Stop:
+    case PlayEvent::Stop:
     {
         m_TBProgress.SetTrackPosition(0.f);
         m_TBProgress.Invalidate();
         TblUpdateProgress();
     }
     [[fallthrough]];
-    case PlayEvt::Pause:
+    case PlayEvent::Pause:
     {
         KillTimer(Handle, IDT_COMM_TICK);
         m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
@@ -275,7 +275,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
     case WM_TIMER:
         if (wParam == IDT_COMM_TICK)
-            App->Player().GetSignal().Emit({ PlayEvt::CommTick });
+            App->Player().GetEventChain().Emit({ PlayEvent::CommonTick });
         break;
     case WM_SIZE:
     {
@@ -425,11 +425,10 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
         if (pEle == &m_BTPlay)
             App->Player().PlayOrPause();
         else if (pEle == &m_BTPrev)
-            App->Player().Prev();
+            App->Player().Previous();
         else if (pEle == &m_BTNext)
             App->Player().Next();
-        else if (pEle == &m_BTLrc)
-            LwShow(!LwIsShowing());
+        //else if (pEle == &m_BTLrc)
         else if (pEle == &m_BTAutoNext)
         {
             const auto r = App->Player().NextAutoNextMode();
@@ -494,32 +493,32 @@ void CWindowMain::TlTick(int iMs) noexcept
     }
 }
 
-void CWindowMain::LwShow(BOOL bShow)
-{
-    if (bShow)
-    {
-        if (m_WndLrc.IsValid())
-            m_WndLrc.Show(SW_SHOWNOACTIVATE);
-        else
-        {
-            m_WndLrc.SetPresentMode(Dui::PresentMode::UpdateLayeredWindow);
-            m_WndLrc.SetTransparent(TRUE);
-            m_WndLrc.SetUserDpi(GetUserDpi());
-            m_WndLrc.Create(L"VioletModel - Lyrics", WS_POPUP | WS_VISIBLE,
-                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
-                300, 400, 500, 300, Handle, nullptr);
-        }
-        m_WndLrc.Redraw();
-    }
-    else
-        if (m_WndLrc.IsValid())
-            m_WndLrc.Show(SW_HIDE);
-}
-
-BOOL CWindowMain::LwIsShowing()
-{
-    return m_WndLrc.IsValid() && m_WndLrc.IsVisible();
-}
+//void CWindowMain::LwShow(BOOL bShow)
+//{
+//    if (bShow)
+//    {
+//        if (m_WndLrc.IsValid())
+//            m_WndLrc.Show(SW_SHOWNOACTIVATE);
+//        else
+//        {
+//            m_WndLrc.SetPresentMode(Dui::PresentMode::UpdateLayeredWindow);
+//            m_WndLrc.SetTransparent(TRUE);
+//            m_WndLrc.SetUserDpi(GetUserDpi());
+//            m_WndLrc.Create(L"VioletModel - Lyrics", WS_POPUP | WS_VISIBLE,
+//                WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST,
+//                300, 400, 500, 300, Handle, nullptr);
+//        }
+//        m_WndLrc.Redraw();
+//    }
+//    else
+//        if (m_WndLrc.IsValid())
+//            m_WndLrc.Show(SW_HIDE);
+//}
+//
+//BOOL CWindowMain::LwIsShowing()
+//{
+//    return m_WndLrc.IsValid() && m_WndLrc.IsVisible();
+//}
 
 void CWindowMain::UpdateButtonImageSize()
 {

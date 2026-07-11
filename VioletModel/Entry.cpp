@@ -51,7 +51,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     App = new CApp{};
     CApp::Init();
     //#ifdef _DEBUG
-    App->ListManager().Add()->SetName(L"测试列表"sv);
+    App->ListManager().Add()->LtmSetName(L"测试列表"sv);
     //#endif
 
     const auto pWnd = new CWindowMain{};

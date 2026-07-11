@@ -3,52 +3,41 @@
 #include "CApp.h"
 #include "CPlayListFile.h"
 
-
-void CPlayList::ImFixGroupIndex(int idxFlatBegin, int nDelta)
-{
-}
-
-void CPlayList::SetListFile(std::wstring_view svPath, std::wstring_view svFileName)
+void CPlayList::LtmSetFile(std::wstring_view svPath, std::wstring_view svFileName) noexcept
 {
 	m_rsListFile = svPath;
-	m_rsListFile.PushBackChar(L'\\');
+	m_rsListFile.PazAddBackslash();
 	m_rsListFile.PushBack(svFileName);
 	m_rsName = svFileName;
 	m_rsName.PazRemoveExtension();
 }
 
-void CPlayList::ImEnsureLoaded()
+void CPlayList::LtmEnsureLoaded() noexcept
 {
-	if (m_bNeedInit)
+	if (m_bLazyInit)
 	{
-		m_bNeedInit = FALSE;
-		CPlayListFileReader r{ m_rsListFile.Data() };
-		r.Load(this);
+		m_bLazyInit = FALSE;
+        LtmInitializeFromListFile(m_rsListFile.Data());
 	}
 }
 
-BOOL CPlayList::PlyIsSelected() noexcept
+HRESULT CPlayList::LtmInitializeFromListFile(PCWSTR pszFile) noexcept
 {
-	return App->Player().GetList() == this;
-}
-
-HRESULT CPlayList::InitFromListFile(PCWSTR pszFile)
-{
-	const auto rbFile = eck::ReadInFile(pszFile);
-	// TODO
+	CPlayListFileReader r{ pszFile };
+	r.Load(this);
 	return S_OK;
 }
 
-void CPlayList::InvalidateImage()
+void CPlayList::LtmInvalidateImage() noexcept
 {
 	for (auto& e : m_vFlat)
 	{
-		e.idxIl = 0;
+		e.idxImage = 0;
 		e.s.bCoverUpdated = FALSE;
 	}
 }
 
-int CPlayList::FlInsert(const eck::CStringW& rsFile, int idx)
+int CPlayList::FlInsert(const eck::CStringW& rsFile, int idx) noexcept
 {
 	idx = FlInsertEmpty(idx);
 	auto& e = FlAt(idx);
@@ -58,7 +47,7 @@ int CPlayList::FlInsert(const eck::CStringW& rsFile, int idx)
 	return idx;
 }
 
-int CPlayList::FlInsertEmpty(int idx)
+int CPlayList::FlInsertEmpty(int idx) noexcept
 {
 	EckAssert(idx <= (int)m_vFlat.size());
 	auto& e = (idx < 0 ? m_vFlat.emplace_back() :
@@ -68,9 +57,9 @@ int CPlayList::FlInsertEmpty(int idx)
 	return idx;
 }
 
-void CPlayList::FlSchDoSearch(std::wstring_view svKeyWord)
+void CPlayList::FlDoSearch(std::wstring_view svKeyWord) noexcept
 {
-	m_vSearchResult.clear();
+	m_vSearchResult.Clear();
 	if (svKeyWord.empty())
 		return;
 	for (int i{}; const auto& e : m_vFlat)
@@ -78,12 +67,12 @@ void CPlayList::FlSchDoSearch(std::wstring_view svKeyWord)
 		if (e.rsName.FindI(svKeyWord) >= 0 ||
 			e.rsArtist.FindI(svKeyWord) >= 0 ||
 			e.rsAlbum.FindI(svKeyWord) >= 0)
-			m_vSearchResult.emplace_back(i);
+			m_vSearchResult.PushBack(i);
 		++i;
 	}
 }
 
-void CPlayList::FlRmShuffle() noexcept
+void CPlayList::FlShuffleRandom() noexcept
 {
     m_vRandomMapping.ReSize(FlGetCount());
 	for (int i{}; auto& e : m_vRandomMapping)
@@ -99,7 +88,12 @@ void CPlayList::FlRmShuffle() noexcept
 	}
 }
 
-void CPlayList::FlRmOnPlayItem(int idxFlat) noexcept
+BOOL CPlayList::PlyIsSelected() noexcept
+{
+	return App->Player().GetList() == this;
+}
+
+void CPlayList::PlySetCurrentRandomItemFromFlat(int idxFlat) noexcept
 {
 	if (m_idxCurrFlat < 0)
 		return;
@@ -112,14 +106,4 @@ void CPlayList::FlRmOnPlayItem(int idxFlat) noexcept
 			break;
 		}
     }
-}
-
-int CPlayList::GrInsertGroup(const eck::CStringW& rsName, int idx)
-{
-	return 0;
-}
-
-CPlayList::GROUPIDX CPlayList::GrInsert(const eck::CStringW& rsFile, int idxItem, int idxGroup)
-{
-	return GROUPIDX();
 }

@@ -118,7 +118,7 @@ BOOL CWindowMain::TblOnCommand(WPARAM wParam)
 		App->Player().PlayOrPause();
 		return TRUE;
 	case IDTBB_PREV:
-		App->Player().Prev();
+		App->Player().Previous();
 		return TRUE;
 	}
 	return FALSE;
@@ -228,7 +228,7 @@ HRESULT CWindowMain::SmtcInit() noexcept
 						App->Player().Next();
 						break;
 					case WinMedia::SystemMediaTransportControlsButton::Previous:
-						App->Player().Prev();
+						App->Player().Previous();
 						break;
 					default:
 						return;
@@ -246,7 +246,7 @@ HRESULT CWindowMain::SmtcInit() noexcept
 #if VIOLET_WINRT
 eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay()
 {
-	const auto mi = App->Player().GetMusicInfo();// 复制一份
+	const auto mi = App->Player().GetMusicSimpleData();// 复制一份
 	auto Token{ co_await eck::CoroGetPromiseToken() };
 	co_await eck::CoroResumeBackground();
 

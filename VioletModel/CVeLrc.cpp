@@ -579,9 +579,9 @@ HRESULT CVeLyric::LrcSetCurrentLine(int idxCurr) noexcept
 
 HRESULT CVeLyric::LrcInitialize(RefPtr<Lyric::CLyric> pLyric) noexcept
 {
-    m_pLrc = pLyric;
+    m_pLyric = pLyric;
     m_idxCurr = -1;
-    m_pRenderer->LrSetItemCount(m_pLrc->MgGetLineCount());
+    m_pRenderer->LrSetItemCount(m_pLyric->MgGetLineCount());
     ItmLayout();
     ItmDelayComplete();
     if (!IsEmpty())
@@ -593,7 +593,7 @@ HRESULT CVeLyric::LrcInitialize(RefPtr<Lyric::CLyric> pLyric) noexcept
 
 void CVeLyric::LrcClear() noexcept
 {
-    m_pLrc.Clear();
+    m_pLyric.Clear();
     m_vItem.clear();
     m_idxTop = -1;
     m_idxHot = -1;
@@ -705,13 +705,13 @@ void CVeLyric::ItmLayout() noexcept
         return;
     }
     m_vItem.clear();
-    if (!m_pLrc || !m_pLrc->MgGetLineCount())
+    if (!m_pLyric || !m_pLyric->MgGetLineCount())
     {
         m_SB.SetVisible(FALSE);
         return;
     }
 
-    const auto cLrc = m_pLrc->MgGetLineCount();
+    const auto cLrc = m_pLyric->MgGetLineCount();
     const auto yInit = (float)-m_SB.GetTrackPosition();
     DWRITE_TEXT_METRICS tm;
 
@@ -729,7 +729,7 @@ void CVeLyric::ItmLayout() noexcept
     EckCounter(cLrc, i)
     {
         auto& e = m_vItem[i];
-        const auto& Line = m_pLrc->MgAtLine(i);
+        const auto& Line = m_pLyric->MgAtLine(i);
 
         e.bCacheValid = TRUE;
         e.y = y;

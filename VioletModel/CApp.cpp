@@ -160,7 +160,7 @@ void CApp::LoadSkin(BOOL bLoadAll)
 	for (size_t i{}; i < iEnd; ++i)
 	{
 		wcscpy(pszFileName, ImgFile[i]);
-		if (FAILED(eck::WicLoadSource(m_pImage[i].AtSelfClear(), rsPath.Data())))
+		if (FAILED(eck::WicLoadSource(m_pBitmap[i].AtSelfClear(), rsPath.Data())))
 		{
             MessageBoxW(
 				nullptr,
@@ -176,7 +176,7 @@ CApp::CApp()
 {
 	m_ptcUiThread = eck::PtcCurrent();
 	EckAssert(m_ptcUiThread);
-	m_ListMgr.LoadList();
+	m_ListManager.LoadList();
 	LoadSkin(TRUE);
 }
 
@@ -194,7 +194,7 @@ void CApp::SetDarkMode(BOOL bDarkMode)
 	m_bDarkMode = bDarkMode;
 	if (m_bDarkMode)
 		for (size_t i{}; i < (size_t)AppImage::Priv_InvertEnd; ++i)
-			m_pImage[i] = InvertSkin(m_pImage[i].Get());
+			m_pBitmap[i] = InvertSkin(m_pBitmap[i].Get());
 	else
 		LoadSkin(FALSE);
 }

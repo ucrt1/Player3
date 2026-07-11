@@ -6,13 +6,13 @@ void CWndLrc::OnPlayEvent(const PLAY_EVT_PARAM& e)
 {
 	switch (e.eEvent)
 	{
-	case PlayEvt::CommTick:
-		m_Lrc.LrcSetCurrentLine(App->Player().GetCurrLrcIdx());
+	case PlayEvent::CommonTick:
+		m_Lrc.LrcSetCurrentLine(App->Player().GetCurrentLyricLine());
 		break;
-	case PlayEvt::Play:
+	case PlayEvent::Play:
 	{
 		Lyric::CLyric pLyric;
-		App->Player().GetLrc(pLyric());
+		App->Player().GetLyric(pLyric());
 		m_Lrc.SetLyric(pLyric.Get());
 	}
 	break;
@@ -104,7 +104,7 @@ LRESULT CWndLrc::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 	{
 		const auto lResult = __super::OnMessage(uMsg, wParam, lParam);
 
-		App->Player().GetSignal().Connect(this, &CWndLrc::OnPlayEvent);
+		App->Player().GetEventChain().Connect(this, &CWndLrc::OnPlayEvent);
 		KctRegisterTimeLine(this);
 
 		m_pVioletTheme = new CVioletTheme{};
@@ -182,7 +182,7 @@ LRESULT CWndLrc::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexce
 		return 0;
 		}
 	if (pEle == &m_BTPrev)
-		App->Player().Prev();
+		App->Player().Previous();
 	else if (pEle == &m_BTPlay)
 		App->Player().PlayOrPause();
 	else if (pEle == &m_BTNext)

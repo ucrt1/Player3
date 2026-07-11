@@ -1,34 +1,24 @@
 ﻿#include "pch.h"
 #include "CPlayListMgr.h"
 
-void CPlayListMgr::LoadList()
+void CPlayListManager::LoadList(std::wstring_view svPath, BOOL bClear = TRUE) noexcept
 {
-    auto rsPath{ eck::GetRunningPath() };
-    rsPath.PushBack(L"\\List");
     auto FnCallback = [&](eck::CFileEnumerator::TDefault& e) noexcept
         {
-            auto& List = *m_vPlayList.emplace_back(std::make_shared<CPlayList>()).pList;
-            List.SetListFile(rsPath.ToStringView(),
-                std::wstring_view{ e.FileName,e.FileNameLength / sizeof(WCHAR) });
-            List.ImMarkNeedInit();
+            const auto pList = Add();
+            pList->LtmSetFile(
+                svPath,
+                std::wstring_view{ e.FileName, e.FileNameLength / sizeof(WCHAR) });
+            pList->LtmMarkLazyInitialize();
         };
     eck::CFileEnumerator ef{};
-    ef.Open(rsPath.Data());
+    ef.Open(svPath.data());
     ef.Enumerate(FnCallback, L"*.VltList"sv);
     ef.Enumerate(FnCallback, L"*.PNList"sv);
     ef.Enumerate(FnCallback, L"*.QKList"sv);
 }
 
-std::shared_ptr<CPlayList> CPlayListMgr::Add()
+RefPtr<CPlayList> CPlayListManager::Add() noexcept
 {
-    return m_vPlayList.emplace_back(RefPtr<CPlayList>::Make()).pList;
-}
-
-void CPlayListMgr::InvalidateImageList()
-{
-    for (auto& e : m_vPlayList)
-    {
-        e.pImageList.Clear();
-        e.pList->InvalidateImage();
-    }
+    return m_vPlayList.emplace_back(CPlayList::New()).pList;
 }

@@ -65,7 +65,7 @@ private:
     std::unique_ptr<CLyricRendererBase> m_pRenderer{};
     ComPtr<IDWriteTextFormat> m_pTfTranslation{};
 
-    RefPtr<Lyric::CLyric> m_pLrc{};
+    RefPtr<Lyric::CLyric> m_pLyric{};
     std::vector<ITEM> m_vItem{};
     int m_idxTop{ -1 };
     int m_idxHot{ -1 };

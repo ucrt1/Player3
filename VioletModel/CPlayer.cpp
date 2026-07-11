@@ -3,42 +3,26 @@
 #include "CPlayList.h"
 #include "Utils.h"
 
-void CPlayer::OnPlayEvent(const PLAY_EVT_PARAM& e)
+
+CPlayer::CPlayer() noexcept
 {
-    switch (e.eEvent)
-    {
-    case PlayEvt::CommTick:
-        m_lfCurrTime = m_Bass.GetPosition();
-        LrcUpdatePosition();
-        break;
-    case PlayEvt::End:
-        AutoNext();
-        break;
-    }
+    // 保证这是第一个槽
+    m_EventChain.Connect(this, &CPlayer::OnPlayEvent);
 }
 
-void CPlayer::SetList(CPlayList* pPlayList) noexcept
+PlayResult CPlayer::PlayWorker(int idx) noexcept
 {
-    if (m_pPlayList == pPlayList)
-        return;
-    m_pPlayList = pPlayList;
-    if (m_pPlayList)
-    {
-        if (m_eAutoNextMode == AutoNextMode::Radom)
-            m_pPlayList->FlRmShuffle();
-    }
-    GetSignal().Emit({ PlayEvt::ListChanged });
-}
+    Stop(TRUE);
+    GetList()->PlySetCurrentItem(idx);
 
-PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
-{
+    const auto& e = m_pPlayList->FlAtAbsolutely(idx);
     m_bActive = TRUE;
     m_bPaused = FALSE;
     if (!m_Bass.Open(e.rsFile.Data()))
     {
         m_dwLastHrOrBassErr = CBass::GetError();
         m_bActive = FALSE;
-        return PlayErr::ErrBass;
+        return PlayResult::Bass;
     }
     m_Bass.TempoCreate();
     m_Bass.Play(TRUE);
@@ -49,7 +33,7 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
         {
             ((eck::ThreadContext*)pUser)->Callback.EnQueueCallback([]
                 {
-                    App->Player().m_Sig.Emit({ PlayEvt::End });
+                    App->Player().m_EventChain.Emit({ PlayEvent::End });
                 });
         }, eck::PtcCurrent());
     m_MusicInfo.uMask = Tag::MIM_ALL;
@@ -58,18 +42,18 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     Opt.svCommDiv = {};
     Opt.uFlags = Tag::SMOF_MOVE;
     VltGetMusicInfo(e.rsFile.Data(), m_MusicInfo, Opt);
-    const auto pPic = m_MusicInfo.GetMainCover();
 
-    if (pPic)
+    const auto pCover = m_MusicInfo.GetMainCover();
+    if (pCover)
     {
         m_bDefCover = FALSE;
-        if (pPic->IsLink())
+        if (pCover->IsLink())
             m_dwLastHrOrBassErr = eck::WicLoadSource(
-                m_pBmpCover.AtSelfClear(), pPic->GetPath().Data());
+                m_pBitmapCover.AtSelfClear(), pCover->GetPath().Data());
         else
         {
-            const auto pStream = new eck::CStreamView{ pPic->GetData() };
-            m_dwLastHrOrBassErr = eck::WicLoadSource(m_pBmpCover.AtSelfClear(), pStream);
+            const auto pStream = new eck::CStreamView{ pCover->GetData() };
+            m_dwLastHrOrBassErr = eck::WicLoadSource(m_pBitmapCover.AtSelfClear(), pStream);
             pStream->Release();
         }
         if (FAILED(m_dwLastHrOrBassErr))
@@ -79,248 +63,49 @@ PlayErr CPlayer::PlayWorker(CPlayList::ITEM& e)
     {
     UseDefCover:
         m_bDefCover = TRUE;
-        m_pBmpCover = App->GetImage(AppImage::DefaultCover);
-        m_pBmpCover->AddRef();
+        m_pBitmapCover = App->GetImage(AppImage::DefaultCover);
+        m_pBitmapCover->AddRef();
     }
 
-    m_pLrc = RefPtr<Lyric::CLyric>::Make();
+    m_pLyric = RefPtr<Lyric::CLyric>::Make();
 
     auto rsLrcPath{ e.rsFile };
     rsLrcPath.PazRenameExtension(EckArgString(L".lrc"));
-    m_pLrc->MgAddDividerString(L" / "sv, {});
-    m_pLrc->MgAddDividerString(L" 「"sv, L"」"sv);
-    m_pLrc->MgSetDuration((float)m_lfTotalTime);
-    if (NT_SUCCESS(m_pLrc->LoadTextFile(rsLrcPath.Data())) &&
-        !m_pLrc->IsTextEmpty())
-        m_pLrc->ParseLrc();
-    if (!m_pLrc->MgGetLineCount() && !m_MusicInfo.rsLrc.IsEmpty())
+    m_pLyric->MgAddDividerString(L" / "sv, {});
+    m_pLyric->MgAddDividerString(L" 「"sv, L"」"sv);
+    m_pLyric->MgSetDuration((float)m_lfTotalTime);
+    if (NT_SUCCESS(m_pLyric->LoadTextFile(rsLrcPath.Data())) &&
+        !m_pLyric->IsTextEmpty())
+        m_pLyric->ParseLrc();
+    if (!m_pLyric->MgGetLineCount() && !m_MusicInfo.rsLrc.IsEmpty())
     {
-        m_pLrc->LoadTextMove(std::move(m_MusicInfo.rsLrc));
-        m_pLrc->ParseLrc();
+        m_pLyric->LoadTextMove(std::move(m_MusicInfo.rsLrc));
+        m_pLyric->ParseLrc();
     }
 
-    GetSignal().Emit({ PlayEvt::Play });
-    return PlayErr::Ok;
+    GetEventChain().Emit({ PlayEvent::Play });
+    return PlayResult::Ok;
 }
 
-PlayErr CPlayer::PlayIndex(int idx)
+void CPlayer::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
 {
-    Stop(TRUE);
-    GetList()->PlySetCurrentItem(idx);
-    return PlayWorker(GetList()->FlAtAbs(idx));
-}
-
-PlayErr CPlayer::PlayIndex(int idxGroup, int idxItem)
-{
-    Stop(TRUE);
-    GetList()->PlySetCurrentItem(idxGroup, idxItem);
-    return PlayWorker(GetList()->GrAt(idxGroup, idxItem));
-}
-
-PlayErr CPlayer::Play(int idx)
-{
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    if (IsRandom())
-        GetList()->FlRmOnPlayItem(idx);
-    return PlayIndex(idx);
-}
-
-PlayErr CPlayer::Play(int idxGroup, int idxItem)
-{
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    EckDbgBreak();
-    return PlayErr::Ok;
-}
-
-PlayErr CPlayer::PlayOrPause()
-{
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    if (m_bActive)
+    switch (e.eEvent)
     {
-        switch (m_Bass.IsActive())
-        {
-        case BASS_ACTIVE_PLAYING:
-            m_Bass.Pause();
-            m_bPaused = TRUE;
-            GetSignal().Emit({ PlayEvt::Pause });
-            return PlayErr::Ok;
-        case BASS_ACTIVE_PAUSED:
-            m_Bass.Play();
-            m_bPaused = FALSE;
-            GetSignal().Emit({ PlayEvt::Resume });
-            return PlayErr::Ok;
-        }
-        return PlayErr::UnexpectedPlayingState;
-    }
-    else
-    {
-        if (GetList()->FlGetCount())
-            PlayIndex(0);
-    }
-    return PlayErr::Ok;
-}
-
-PlayErr CPlayer::Stop(BOOL bNoGap)
-{
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    m_Bass.Stop();
-    m_Bass.Close();
-    m_idxCurrLrc = m_idxLastLrc = -1;
-    if (!bNoGap)
-    {
-        m_bDefCover = TRUE;
-        m_bActive = FALSE;
-        m_Sig.Emit({ PlayEvt::Stop });
-        if (GetList()->IsGroupEnabled())
-            GetList()->PlySetCurrentItem(-1, -1);
-        else
-            GetList()->PlySetCurrentItem(-1);
-    }
-    return PlayErr::Ok;
-}
-
-PlayErr CPlayer::Next(BOOL bNoLoop)
-{
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    int idxItem, idxGroup;
-    if (GetList()->IsGroupEnabled())
-    {
-        idxItem = GetList()->PlyGetCurrentItem(idxGroup);
-        if (idxItem < 0)
-            return PlayErr::NoPlayList;
-        const auto cCurrGroupItem = (int)GetList()->GrAtGroup(idxGroup).vItem.size();
-        ++idxItem;
-        if (idxItem >= cCurrGroupItem)
-        {
-            if (bNoLoop)
-                return PlayErr::ListEnd;
-            idxItem = 0;
-            ++idxGroup;
-            if (idxGroup >= GetList()->GrGetGroupCount())
-                idxGroup = 0;// 回到第一个组
-        }
-        return PlayIndex(idxGroup, idxItem);
-    }
-    else
-    {
-        if (IsRandom())
-            idxItem = GetList()->PlyGetCurrentRandomItem();
-        else
-            idxItem = GetList()->PlyGetCurrentItem();
-        if (idxItem < 0)
-            return PlayErr::NoPlayList;
-        ++idxItem;
-        if (idxItem >= GetList()->FlGetCount())
-        {
-            if (bNoLoop)
-                return PlayErr::ListEnd;
-            idxItem = 0;
-        }
-        if (IsRandom())
-        {
-            GetList()->PlySetCurrentRandomItem(idxItem);
-            return PlayIndex(GetList()->FlRmAt(idxItem));
-        }
-        return PlayIndex(idxItem);
+    case PlayEvent::CommonTick:
+        m_lfCurrTime = m_Bass.GetPosition();
+        UpdateLyricLine();
+        break;
+    case PlayEvent::End:
+        AutoNext();
+        break;
     }
 }
 
-PlayErr CPlayer::Prev()
+BOOL CPlayer::UpdateLyricLine() noexcept
 {
-    if (!m_pPlayList)
-        return PlayErr::NoPlayList;
-    int idxItem, idxGroup;
-    if (GetList()->IsGroupEnabled())
-    {
-        idxItem = GetList()->PlyGetCurrentItem(idxGroup);
-        if (idxItem < 0)
-            return PlayErr::NoPlayList;
-        if (idxItem <= 0)
-        {
-            idxGroup--;
-            if (idxGroup < 0)
-                idxGroup = GetList()->GrGetGroupCount() - 1;// 回到最后一个组
-            idxItem = (int)GetList()->GrAtGroup(idxGroup).vItem.size() - 1;
-        }
-        else
-            --idxItem;
-        return PlayIndex(idxGroup, idxItem);
-    }
-    else
-    {
-        if (m_eAutoNextMode == AutoNextMode::Radom)
-            idxItem = GetList()->PlyGetCurrentRandomItem();
-        else
-            idxItem = GetList()->PlyGetCurrentItem();
-        if (idxItem < 0)
-            return PlayErr::NoPlayList;
-        if (idxItem <= 0)
-            idxItem = GetList()->FlGetCount() - 1;
-        else
-            --idxItem;
-        if (IsRandom())
-        {
-            GetList()->PlySetCurrentRandomItem(idxItem);
-            return PlayIndex(GetList()->FlRmAt(idxItem));
-        }
-        return PlayIndex(idxItem);
-    }
-}
-
-PlayErr CPlayer::AutoNext()
-{
-    switch (m_eAutoNextMode)
-    {
-    case AutoNextMode::ListLoop:
-    case AutoNextMode::Radom:
-        return Next();
-    case AutoNextMode::List:
-    {
-        const auto r = Next(TRUE);
-        if (r == PlayErr::ListEnd)
-            return Stop();
-        return r;
-    }
-    case AutoNextMode::SingleLoop:
-        m_Bass.Play(TRUE);
-        return PlayErr::Ok;
-    case AutoNextMode::Single:
-        return Stop();
-    }
-    return PlayErr::Ok;
-}
-
-void CPlayer::SetPosition(double lfPos)
-{
-    m_Bass.SetPosition(lfPos);
-    m_lfCurrTime = m_Bass.GetPosition();
-}
-
-AutoNextMode CPlayer::NextAutoNextMode()
-{
-    if (++m_eAutoNextMode >= AutoNextMode::Max)
-        m_eAutoNextMode = AutoNextMode::Min;
-    if (GetList())
-        if (IsRandom())
-        {
-            GetList()->FlRmShuffle();
-            const auto idx = GetList()->PlyGetCurrentItem();
-            if (idx >= 0)
-                GetList()->FlRmOnPlayItem(idx);
-        }
-    return m_eAutoNextMode;
-}
-
-BOOL CPlayer::LrcUpdatePosition()
-{
-    if (!m_pLrc)
+    if (!m_pLyric)
         return FALSE;
-    const auto idxNew = m_pLrc->MgTimeToLine((float)m_lfCurrTime, m_idxCurrLrc);
+    const auto idxNew = m_pLyric->MgTimeToLine((float)m_lfCurrTime, m_idxCurrLrc);
     if (m_idxCurrLrc != idxNew)
     {
         m_idxCurrLrc = idxNew;
@@ -328,4 +113,168 @@ BOOL CPlayer::LrcUpdatePosition()
     }
     else
         return FALSE;
+}
+
+PlayResult CPlayer::Play(int idx) noexcept
+{
+    if (!m_pPlayList)
+        return PlayResult::NoPlayList;
+    if (IsRandom())
+        GetList()->PlySetCurrentRandomItemFromFlat(idx);
+    return PlayWorker(idx);
+}
+
+PlayResult CPlayer::PlayOrPause() noexcept
+{
+    if (!m_pPlayList)
+        return PlayResult::NoPlayList;
+    if (m_bActive)
+    {
+        switch (m_Bass.IsActive())
+        {
+        case BASS_ACTIVE_PLAYING:
+            m_Bass.Pause();
+            m_bPaused = TRUE;
+            GetEventChain().Emit({ PlayEvent::Pause });
+            return PlayResult::Ok;
+        case BASS_ACTIVE_PAUSED:
+            m_Bass.Play();
+            m_bPaused = FALSE;
+            GetEventChain().Emit({ PlayEvent::Resume });
+            return PlayResult::Ok;
+        }
+        return PlayResult::UnexpectedState;
+    }
+    else
+    {
+        if (GetList()->FlGetCount())
+            PlayWorker(0);
+    }
+    return PlayResult::Ok;
+}
+
+PlayResult CPlayer::Stop(BOOL bNoGap) noexcept
+{
+    if (!m_pPlayList)
+        return PlayResult::NoPlayList;
+    m_Bass.Stop();
+    m_Bass.Close();
+    m_idxCurrLrc = m_idxLastLrc = -1;
+    if (!bNoGap)
+    {
+        m_bDefCover = TRUE;
+        m_bActive = FALSE;
+        m_EventChain.Emit({ PlayEvent::Stop });
+        GetList()->PlySetCurrentItem(-1);
+    }
+    return PlayResult::Ok;
+}
+
+PlayResult CPlayer::Next(BOOL bNoLoop) noexcept
+{
+    if (!m_pPlayList)
+        return PlayResult::NoPlayList;
+    int idxItem, idxGroup;
+    if (IsRandom())
+        idxItem = GetList()->PlyGetCurrentRandomItem();
+    else
+        idxItem = GetList()->PlyGetCurrentItem();
+    if (idxItem < 0)
+        return PlayResult::NoPlayList;
+    ++idxItem;
+    if (idxItem >= GetList()->FlGetCount())
+    {
+        if (bNoLoop)
+            return PlayResult::ListEnd;
+        idxItem = 0;
+    }
+    if (IsRandom())
+    {
+        GetList()->PlySetCurrentRandomItem(idxItem);
+        return PlayWorker(GetList()->FlRandomIndexToRealIndex(idxItem));
+    }
+    return PlayWorker(idxItem);
+}
+
+PlayResult CPlayer::Previous() noexcept
+{
+    if (!m_pPlayList)
+        return PlayResult::NoPlayList;
+    int idxItem, idxGroup;
+    if (m_eAutoNext == AutoNextMode::Random)
+        idxItem = GetList()->PlyGetCurrentRandomItem();
+    else
+        idxItem = GetList()->PlyGetCurrentItem();
+    if (idxItem < 0)
+        return PlayResult::NoPlayList;
+    if (idxItem <= 0)
+        idxItem = GetList()->FlGetCount() - 1;
+    else
+        --idxItem;
+    if (IsRandom())
+    {
+        GetList()->PlySetCurrentRandomItem(idxItem);
+        return PlayWorker(GetList()->FlRandomIndexToRealIndex(idxItem));
+    }
+    return PlayWorker(idxItem);
+}
+
+PlayResult CPlayer::AutoNext() noexcept
+{
+    switch (m_eAutoNext)
+    {
+    case AutoNextMode::ListLoop:
+    case AutoNextMode::Random:
+        return Next();
+    case AutoNextMode::List:
+    {
+        const auto r = Next(TRUE);
+        if (r == PlayResult::ListEnd)
+            return Stop();
+        return r;
+    }
+    case AutoNextMode::SingleLoop:
+        m_Bass.Play(TRUE);
+        return PlayResult::Ok;
+    case AutoNextMode::Single:
+        return Stop();
+    }
+    return PlayResult::Ok;
+}
+
+void CPlayer::SetPosition(double lfPos) noexcept
+{
+    m_Bass.SetPosition(lfPos);
+    m_lfCurrTime = m_Bass.GetPosition();
+}
+
+void CPlayer::SetList(RefPtr<CPlayList> pPlayList) noexcept
+{
+    if (m_pPlayList.Get() == pPlayList.Get())
+        return;
+    m_pPlayList = std::move(pPlayList);
+    if (m_pPlayList)
+    {
+        if (m_eAutoNext == AutoNextMode::Random)
+            m_pPlayList->FlShuffleRandom();
+    }
+    GetEventChain().Emit({ PlayEvent::ListChanged });
+}
+
+AutoNextMode CPlayer::NextAutoNextMode() noexcept
+{
+    if (++m_eAutoNext >= AutoNextMode::Maximum)
+    {
+        m_eAutoNext = AutoNextMode::Minimum;
+        ++m_eAutoNext;
+    }
+    if (GetList())
+        if (IsRandom())
+        {
+            GetList()->FlShuffleRandom();
+            const auto idx = GetList()->PlyGetCurrentItem();
+            if (idx >= 0)
+                GetList()->PlySetCurrentRandomItemFromFlat(idx);
+        }
+    return m_eAutoNext;
 }

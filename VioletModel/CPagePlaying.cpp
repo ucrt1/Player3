@@ -87,24 +87,24 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
 {
     switch (e.eEvent)
     {
-    case PlayEvt::CommTick:
+    case PlayEvent::CommonTick:
     {
-        m_Lrc.LrcSetCurrentLine(App->Player().GetCurrLrcIdx());
+        m_Lrc.LrcSetCurrentLine(App->Player().GetCurrentLyricLine());
     }
     break;
-    case PlayEvt::Play:
+    case PlayEvent::Play:
     {
         UpdateBlurredCover();
         Invalidate();
-        const auto& mi = App->Player().GetMusicInfo();
+        const auto& mi = App->Player().GetMusicSimpleData();
         m_LATitle.SetText(mi.rsTitle.Data());
         m_LAAlbum.SetText(mi.rsAlbum.Data());
         m_LAArtist.SetText(mi.slArtist.FrontData());
 
-        m_Lrc.LrcInitialize(App->Player().GetLrc());
+        m_Lrc.LrcInitialize(App->Player().GetLyric());
     }
     break;
-    case PlayEvt::Stop:
+    case PlayEvent::Stop:
     {
         m_Lrc.LrcClear();
         SetEmptyText();
@@ -217,6 +217,7 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         Invalidate();
     }
     break;
+    // FIXME
     //case WM_LBUTTONUP:
     //{
     //    if (((CWindowMain*)GetWnd())->TlIsValid())
@@ -228,7 +229,7 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     //break;
     case WM_CREATE:
     {
-        App->Player().GetSignal().Connect(this, &CPagePlaying::OnPlayEvent);
+        App->Player().GetEventChain().Connect(this, &CPagePlaying::OnPlayEvent);
 
         m_Cover.Create(nullptr, Dui::DES_VISIBLE, 0,
             50, 50, 200, 200, this);

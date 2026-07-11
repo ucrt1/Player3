@@ -43,7 +43,7 @@ void CPlayListFileReader::Load(CPlayList* pList)
     {
         r.SetData(m_pHeader2, (size_t)m_File.GetSize());
         r += sizeof(LISTFILEHEADER_2);
-        pList->ImReserveIncrement(m_pHeader2->cItem);
+        pList->LtmReserveIncrement(m_pHeader2->cItem);
 
         const LISTFILEITEM_2* pItem;
         EckCounter(m_pHeader2->cItem, i)
@@ -73,7 +73,7 @@ void CPlayListFileReader::Load(CPlayList* pList)
 
         r += sizeof(LISTFILEHEADER_1);
         r += eck::CchToCbW(m_pHeader1->cchCreator);
-        pList->ImReserveIncrement(m_pHeader1->cItems);
+        pList->LtmReserveIncrement(m_pHeader1->cItems);
 
         const LISTFILEITEM_1* pItem;
         EckCounter(m_pHeader1->cItems, i)
@@ -104,7 +104,7 @@ void CPlayListFileReader::Load(CPlayList* pList)
         r.SetData(m_pHeader0, (size_t)m_File.GetSize());
 
         r += sizeof(LISTFILEHEADER_0);
-        pList->ImReserveIncrement(m_pHeader0->iCount);
+        pList->LtmReserveIncrement(m_pHeader0->iCount);
 
         const LISTFILEITEM_0* pItem;
         EckCounter(m_pHeader0->iCount, i)

@@ -1,131 +1,127 @@
 ﻿#pragma once
 #include "CPlayList.h"
 
-enum class PlayEvt
+enum class PlayEvent
 {
-	Play,
-	Pause,
-	Resume,
-	Stop,
-	End,
-	CommTick,
-	ListChanged,
+    Play,
+    Pause,
+    Resume,
+    Stop,
+    End,
+    CommonTick,
+    ListChanged,
 };
 
 struct PLAY_EVT_PARAM
 {
-	PlayEvt eEvent;
+    PlayEvent eEvent;
 };
 
-enum class PlayErr
+enum class PlayResult
 {
-	Ok,
-	NoPlayList,		// 没有播放列表
-	ErrBass,		// Bass报告了错误
-	ErrHResult,		// HRESULT错误
-	UnexpectedPlayingState,// CPlayer::PlayOrPause使用，Bass播放状态异常
-	NoCurrItem,		// 当前未播放任何项
-	ListEnd,		// 已播放到列表末尾
+    Ok,
+    NoPlayList, // 没有播放列表
+    Bass,       // Bass报告错误
+    HResult,    // HRESULT错误
+    UnexpectedState,// CPlayer::PlayOrPause使用，Bass播放状态异常
+    NoCurrItem, // 当前未播放任何项
+    ListEnd,    // 已播放到列表末尾
 };
 
 enum class AutoNextMode : BYTE
 {
-	Min,
+    Minimum,
 
-	ListLoop = Min,	// 列表循环
-	List,		// 列表播放
-	Radom,		// 随机播放
-	SingleLoop,	// 单曲循环
-	Single,		// 单曲播放
+    ListLoop,   // 列表循环
+    List,		// 列表播放
+    Random,		// 随机播放
+    SingleLoop,	// 单曲循环
+    Single,		// 单曲播放
 
-	Max,
+    Maximum,
 };
 EckInlineNdCe AutoNextMode operator++(AutoNextMode& eMode) noexcept
 {
-	return eMode = AutoNextMode((eck::UnderlyingType_T<AutoNextMode>)eMode + 1);
+    return eMode = AutoNextMode((eck::UnderlyingType_T<AutoNextMode>)eMode + 1);
 }
 
 
 class CPlayer final
 {
 private:
-	eck::CEventChain<eck::NoIntercept_T, void, const PLAY_EVT_PARAM&> m_Sig{};
-	CBass m_Bass{};
+    eck::CEventChain<eck::NoIntercept_T, void, const PLAY_EVT_PARAM&> m_EventChain{};
 
-	ComPtr<IWICBitmapSource> m_pBmpCover{};
-	CPlayList* m_pPlayList{};
+    CBass m_Bass{};
 
-	Tag::SimpleData m_MusicInfo{};
-	RefPtr<Lyric::CLyric> m_pLrc{};
+    ComPtr<IWICBitmapSource> m_pBitmapCover{};
+    RefPtr<CPlayList> m_pPlayList{};
 
-	int m_idxCurrLrc = -1;
-	int m_idxLastLrc = -1;
+    Tag::SimpleData m_MusicInfo{};
 
-	double m_lfCurrTime{};// 秒
-	double m_lfTotalTime{};// 秒
+    RefPtr<Lyric::CLyric> m_pLyric{};
+    int m_idxCurrLrc = -1;
+    int m_idxLastLrc = -1;
 
-	DWORD m_dwLastHrOrBassErr{};
+    double m_lfCurrTime{};// 秒
+    double m_lfTotalTime{};// 秒
 
-	AutoNextMode m_eAutoNextMode{};
+    DWORD m_dwLastHrOrBassErr{};
 
-	BITBOOL m_bActive : 1{};
-	BITBOOL m_bPaused : 1{};	// 是否暂停
-	BITBOOL m_bDefCover : 1{ TRUE };	// 是否使用默认封面
+    AutoNextMode m_eAutoNext{};
+
+    BOOLEAN m_bActive{};
+    BOOLEAN m_bPaused{};// 是否暂停
+    BOOLEAN m_bDefCover{ TRUE };// 是否使用默认封面
 
 
-	PlayErr PlayWorker(CPlayList::ITEM& e);
-	PlayErr PlayIndex(int idx);
-	PlayErr PlayIndex(int idxGroup, int idxItem);
+    PlayResult PlayWorker(int idx) noexcept;
 
-	void OnPlayEvent(const PLAY_EVT_PARAM& e);
+    void OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept;
 
-	BOOL LrcUpdatePosition();
-
+    BOOL UpdateLyricLine() noexcept;
 public:
-	CPlayer()
-	{
-		// 保证这是第一个槽
-		m_Sig.Connect(this, &CPlayer::OnPlayEvent);
-	}
+    CPlayer() noexcept;
 
-	EckInlineNdCe auto& GetSignal() noexcept { return m_Sig; }
-	void SetList(CPlayList* pPlayList) noexcept;
-	EckInlineNdCe CPlayList* GetList() const noexcept { return m_pPlayList; }
-	EckInlineNdCe BOOL IsActive() const noexcept { return m_bActive; }
-	// 秒
-	EckInlineNdCe double GetCurrentTime() const noexcept { return m_lfCurrTime; }
-	// 秒
-	EckInlineNdCe double GetTotalTime() const noexcept { return m_lfTotalTime; }
-	EckInlineNdCe auto& GetBass() noexcept { return m_Bass; }
+    PlayResult Play(int idx) noexcept;
+    PlayResult PlayOrPause() noexcept;
+    PlayResult PlayOrPause(BOOL bPause) noexcept
+    {
+        if (bPause == m_bPaused)
+            return PlayResult::Ok;
+        return PlayOrPause();
+    }
+    PlayResult Stop(BOOL bNoGap = FALSE) noexcept;
+    PlayResult Next(BOOL bNoLoop = FALSE) noexcept;
+    PlayResult Previous() noexcept;
+    PlayResult AutoNext() noexcept;
 
-	PlayErr Play(int idx);
-	PlayErr Play(int idxGroup, int idxItem);
-	PlayErr PlayOrPause();
-	PlayErr PlayOrPause(BOOL bPause)
-	{
-		if (bPause == m_bPaused)
-			return PlayErr::Ok;
-		return PlayOrPause();
-	}
-	PlayErr Stop(BOOL bNoGap = FALSE);
-	PlayErr Next(BOOL bNoLoop = FALSE);
-	PlayErr Prev();
-	PlayErr AutoNext();
+    EckInlineNdCe BOOL IsPaused() const noexcept { return m_bPaused; }
+    EckInlineNdCe BOOL IsActive() const noexcept { return m_bActive; }
 
-	// 秒
-	void SetPosition(double lfPos);
+    // 秒
+    EckInlineNdCe double GetCurrentTime() const noexcept { return m_lfCurrTime; }
+    // 秒
+    EckInlineNdCe double GetTotalTime() const noexcept { return m_lfTotalTime; }
+    // 秒
+    void SetPosition(double lfPos) noexcept;
 
-	auto& GetCover() const{return m_pBmpCover; }
+    void SetList(RefPtr<CPlayList> pPlayList) noexcept;
+    EckInlineNdCe auto& GetList() const noexcept { return m_pPlayList; }
 
-	AutoNextMode NextAutoNextMode();
-    EckInlineNdCe BOOL IsRandom() const noexcept { return m_eAutoNextMode == AutoNextMode::Radom; }
+    EckInlineNdCe auto& GetCover() const noexcept { return m_pBitmapCover; }
+    EckInlineNdCe auto& GetEventChain() noexcept { return m_EventChain; }
+    EckInlineNdCe auto& GetBass() noexcept { return m_Bass; }
+    EckInlineNdCe auto& GetLyric() const noexcept { return m_pLyric; }
+    EckInlineNdCe auto& GetMusicSimpleData() const noexcept { return m_MusicInfo; }
 
-	EckInlineNdCe auto& GetMusicInfo() const noexcept { return m_MusicInfo; }
-	EckInlineNdCe DWORD GetLastHrOrBassErr() const noexcept { return m_dwLastHrOrBassErr; }
-	EckInlineNdCe BOOL IsPaused() const noexcept { return m_bPaused; }
-	EckInlineNdCe int GetCurrLrcIdx() const noexcept { return m_idxCurrLrc; }
-	EckInlineNd auto& GetLrc() const noexcept { return m_pLrc; }
-	EckInlineCe void SetAutoNextMode(AutoNextMode eMode) noexcept { m_eAutoNextMode = eMode; }
-	EckInlineNdCe AutoNextMode GetAutoNextMode() const noexcept { return m_eAutoNextMode; }
-	EckInlineNdCe BOOL IsDefaultCover() const noexcept { return m_bDefCover; }
+    AutoNextMode NextAutoNextMode();
+    EckInlineNdCe BOOL IsRandom() const noexcept { return m_eAutoNext == AutoNextMode::Random; }
+    EckInlineCe void SetAutoNextMode(AutoNextMode eMode) noexcept { m_eAutoNext = eMode; }
+    EckInlineNdCe AutoNextMode GetAutoNextMode() const noexcept { return m_eAutoNext; }
+
+    EckInlineNdCe DWORD GetLastHResultOrBassError() const noexcept { return m_dwLastHrOrBassErr; }
+
+    EckInlineNdCe int GetCurrentLyricLine() const noexcept { return m_idxCurrLrc; }
+
+    EckInlineNdCe BOOL IsDefaultCover() const noexcept { return m_bDefCover; }
 };

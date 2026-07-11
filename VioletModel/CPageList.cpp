@@ -27,7 +27,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
     pList->TskIncRef();
     EckCounter(Param.vItem.size(), i)
     {
-        auto& e = pList->FlAtAbs(Param.vItem[i]);
+        auto& e = pList->FlAtAbsolutely(Param.vItem[i]);
         vTmp[i].mi.uMask = Tag::MIM_NONE;
         if (!e.s.bUpdated)
         {
@@ -51,7 +51,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
     EckCounter(Param.vItem.size(), i)
     {
         const auto idxFlat = Param.vItem[i];
-        const auto& e = pList->FlAtAbs(idxFlat);
+        const auto& e = pList->FlAtAbsolutely(idxFlat);
         auto& f = vTmp[i];
         UINT uSecTime;
         if (f.mi.uMask == Tag::MIM_COVER)
@@ -96,13 +96,13 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
 
     EckCounter(Param.vItem.size(), i)
     {
-        auto& e = pList->FlAtAbs(Param.vItem[i]);
+        auto& e = pList->FlAtAbsolutely(Param.vItem[i]);
         auto& f = vTmp[i];
         if (f.pD2DBitmap.Get())
         {
             const auto idxImg = Param.pIl->AddImage(f.pD2DBitmap.Get());
             if (idxImg >= 0)
-                e.idxIl = idxImg;
+                e.idxImage = idxImg;
         }
         if (f.mi.uMask != Tag::MIM_COVER)
         {
@@ -143,8 +143,8 @@ void CPageList::PlMdBeginLoad(int idxBegin, int idxEnd, int idxList)
         auto& f = e.pList->FlAt(i);
         if (f.s.bUpdated && f.s.bCoverUpdated)
             continue;
-        if (e.pList->FlSchIsActive())
-            Param.vItem.emplace_back(e.pList->FlSchAt(i));
+        if (e.pList->FlIsSearching())
+            Param.vItem.emplace_back(e.pList->FlAtSearch(i));
         else
             Param.vItem.emplace_back(i);
     }
@@ -191,13 +191,13 @@ int CPageList::PlSearchEditContent(CPlayList* pList)
 
         m_EDSearchItem.GetTextEx(&gte, rsFilter.Data());
 
-        pList->FlSchDoSearch(rsFilter.ToStringView());
-        return pList->FlSchGetCount();
+        pList->FlDoSearch(rsFilter.ToStringView());
+        return pList->FlGetSearchResultCount();
     }
     else
     {
         m_bSearchItemEditEmpty = TRUE;
-        pList->FlSchCancel();
+        pList->FlExitSearch();
         return pList->FlGetCount();
     }
 }
@@ -271,7 +271,7 @@ HRESULT CPageList::OnMenuAddFile(CPlayList* pList, int idxInsert)
     }
     if (App->Player().IsRandom() &&
         App->Player().GetList() == pList)
-        pList->FlRmShuffle();
+        pList->FlShuffleRandom();
     return S_OK;
 }
 
@@ -290,7 +290,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 if (p->uMask & eck::DIM_TEXT)
                 {
                     const auto pList = App->ListManager().AtList(p->idx);
-                    const auto& rsName = pList->GetName();
+                    const auto& rsName = pList->LtmGetName();
                     p->cchText = rsName.CopyTo((PWSTR)p->pszText, p->cchText);
                 }
                 if (p->uMask & eck::DIM_IMAGE)
@@ -304,12 +304,12 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                     break;
                 IlReCreate(p->idx, FALSE);
                 const auto& e = App->ListManager().At(p->idx);
-                e.pList->ImEnsureLoaded();
+                e.pList->LtmEnsureLoaded();
                 m_GLList.InvalidateCache();
                 m_GLList.SetImageList(e.pImageList.Get());
                 int cItem = e.pList->FlGetCount();
                 if (m_bSearchItemEditEmpty)
-                    e.pList->FlSchCancel();
+                    e.pList->FlExitSearch();
                 else
                     cItem = PlSearchEditContent(e.pList.get());
                 m_GLList.SetItemCount(cItem);
@@ -360,7 +360,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                     if (p->Item.idxSub)
                         p->Item.idxImg = -1;
                     else
-                        p->Item.idxImg = e.idxIl;
+                        p->Item.idxImg = e.idxImage;
                 }
             }
             return 0;
@@ -537,7 +537,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         }
         m_Lyt.Add(&m_LytList, { .r = CxPageIntPadding }, 0, 1);
 
-        m_GLList.GetSignal().Connect(
+        m_GLList.GetEventChain().Connect(
             [&](UINT uMsg, WPARAM wParam, LPARAM lParam, eck::SlotCtx& Ctx)
             {
                 switch (uMsg)
@@ -551,7 +551,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                         break;
                     const auto pList = PlCurrent();
                     App->Player().SetList(pList);
-                    App->Player().Play(pList->FlSchGetRealIndex(idx));
+                    App->Player().Play(pList->FlSearchIndexToRealIndex(idx));
                 }
                 break;
                 }

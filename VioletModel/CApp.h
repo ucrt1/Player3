@@ -184,14 +184,15 @@ class CWindowMain;
 class CApp
 {
 private:
-    ComPtr<IWICBitmapSource> m_pImage[(size_t)AppImage::Max]{};
-
-
+    ComPtr<IWICBitmapSource> m_pBitmap[(size_t)AppImage::Max]{};
 
     BOOL m_bDarkMode{};
+
     CPlayer m_Player{};
-    CPlayListMgr m_ListMgr{};
+    CPlayListManager m_ListManager{};
+
     eck::CDWriteFontFactory m_FontFactory{};
+
     eck::ThreadContext* m_ptcUiThread{};
     CWindowMain* m_pWndMain{};
 
@@ -205,12 +206,12 @@ public:
 
     const D2D1_COLOR_F& GetColor(GPal n) const;
 
-    EckInlineNdCe auto& GetImage(AppImage n) const noexcept { return m_pImage[size_t(n)]; }
+    EckInlineNdCe auto& GetImage(AppImage n) const noexcept { return m_pBitmap[size_t(n)]; }
 
     void SetDarkMode(BOOL bDarkMode);
 
     EckInlineNdCe auto& Player() { return m_Player; }
-    EckInlineNdCe auto& ListManager() { return m_ListMgr; }
+    EckInlineNdCe auto& ListManager() { return m_ListManager; }
     EckInlineNdCe auto& GetFontFactory() { return m_FontFactory; }
     EckInlineNdCe auto& GetMainWindow() { return *m_pWndMain; }
 

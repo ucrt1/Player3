@@ -11,12 +11,11 @@
 #include "CCompPlayPageAn.h"
 #include "CWndTbGhost.h"
 #include "CVeVolumeBar.h"
-#include "CVioletTheme.h"
 #include "CWndLrc.h"
 
 class CWindowMain final : public Dui::CDuiWindow, public eck::ITimeLine
 {
-    friend class CWndTbGhost;
+    friend class CWindowGhost;
 public:
     enum class Page : BYTE
     {
@@ -80,11 +79,7 @@ private:
 
     HICON m_hiTbPlay{}, m_hiTbPause{};
     ComPtr<ITaskbarList4> m_pTaskbarList{};
-    CWndTbGhost m_WndTbGhost{ *this };
-
-    CWndLrc m_WndLrc{};
-
-    CVioletTheme* m_pVioletTheme{ new CVioletTheme{} };
+    CWindowGhost m_WndTbGhost{ *this };
 
 #if VIOLET_WINRT
     WinMedia::SystemMediaTransportControls m_Smtc{ nullptr };
@@ -152,9 +147,4 @@ public:
     void TlTick(int iMs) noexcept override;
     BOOL TlIsValid() noexcept override { return m_bPPAnActive; }
     int TlGetCurrentInterval() noexcept override { return 0; }
-
-    EckInlineNdCe auto GetVioletTheme() const noexcept { return m_pVioletTheme; }
-
-    void LwShow(BOOL bShow);
-    BOOL LwIsShowing();
 };

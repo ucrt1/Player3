@@ -1,24 +1,21 @@
 ﻿#pragma once
 #include "CPlayList.h"
 
-class CPlayListMgr
+class CPlayListManager
 {
 private:
-	struct ITEM
-	{
-		std::shared_ptr<CPlayList> pList;
-		RefPtr<eck::CD2DImageList> pImageList;	// 供UI使用
-	};
-	std::vector<ITEM> m_vPlayList{};
+    struct ITEM
+    {
+        RefPtr<CPlayList> pList;
+    };
+    std::vector<ITEM> m_vPlayList{};
 public:
-	void LoadList();
+    void LoadList(std::wstring_view svPath, BOOL bClear = TRUE) noexcept;
 
-	EckInlineNdCe int GetCount() const { return (int)m_vPlayList.size(); }
+    EckInlineNdCe int GetCount() const noexcept { return (int)m_vPlayList.size(); }
 
-	EckInlineNdCe auto& AtList(int idx) { return m_vPlayList[idx].pList; }
-	EckInlineNdCe auto& At(int idx) { return m_vPlayList[idx]; }
+    EckInlineNdCe auto& AtList(int idx) const noexcept { return m_vPlayList[idx].pList; }
+    EckInlineNdCe auto& At(int idx) const noexcept { return m_vPlayList[idx]; }
 
-	std::shared_ptr<CPlayList> Add();
-
-	void InvalidateImageList();
+    RefPtr<CPlayList> Add() noexcept;
 };

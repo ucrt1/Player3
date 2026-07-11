@@ -2,7 +2,7 @@
 #include "CWndMain.h"
 
 
-LRESULT CWndTbGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
+LRESULT CWindowGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {
     switch (uMsg)
     {
@@ -11,6 +11,10 @@ LRESULT CWndTbGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         constexpr BOOL b = TRUE;
         DwmSetWindowAttribute(Handle, DWMWA_HAS_ICONIC_BITMAP, &b, sizeof(b));
         DwmSetWindowAttribute(Handle, DWMWA_FORCE_ICONIC_REPRESENTATION, &b, sizeof(b));
+
+        const auto ptc = eck::PtcCurrent();
+        eck::CheckBool(!ptc->hGhost);
+        ptc->hGhost = Handle;
     }
     return 0;
 
@@ -27,7 +31,7 @@ LRESULT CWndTbGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             DWORD* pdwBits;
             m_hbmLivePreviewCache = CreateDIBSection(nullptr,
                 &bi, DIB_RGB_COLORS, (void**)&pdwBits, nullptr, 0);
-            *pdwBits = 0x01000000;
+            *pdwBits = 0x01000000;// 透明度为0将显示为完全不透明
         }
         DwmSetIconicLivePreviewBitmap(Handle, m_hbmLivePreviewCache, nullptr, 0);
     }
@@ -59,7 +63,7 @@ LRESULT CWndTbGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     return __super::OnMessage(uMsg, wParam, lParam);
 }
 
-void CWndTbGhost::InvalidateLivePreviewCache()
+void CWindowGhost::InvalidateLivePreviewCache() noexcept
 {
     if (m_hbmLivePreviewCache)
     {
@@ -68,7 +72,7 @@ void CWndTbGhost::InvalidateLivePreviewCache()
     }
 }
 
-void CWndTbGhost::InvalidateThumbnailCache()
+void CWindowGhost::InvalidateThumbnailCache() noexcept
 {
     if (m_hbmThumbnailCache)
     {
@@ -77,7 +81,7 @@ void CWndTbGhost::InvalidateThumbnailCache()
     }
 }
 
-HRESULT CWndTbGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax)
+HRESULT CWindowGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax) noexcept
 {
     HRESULT hr;
     if (cxMax == UINT_MAX || cyMax == UINT_MAX)
