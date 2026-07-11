@@ -74,7 +74,7 @@ private:
     eck::EasingCurve<eck::Easing::FOutExpo> m_PPCornerAn[4]{};
     D2D1_RECT_F m_rcPPMini{};
     D2D1_RECT_F m_rcPPLarge{};
-    CCompPlayPageAn m_CompPlayPageAn{};
+    CCompositorPlayPage m_CompPlayPageAn{};
 
     Dui::CCompositor2DAffineTransform m_CompNormalPageAn{};
 

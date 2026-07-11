@@ -129,22 +129,10 @@
     <ClInclude Include="Utils.h">
       <Filter>程序</Filter>
     </ClInclude>
-    <ClInclude Include="CVioletTheme.h">
-      <Filter>UI\其他</Filter>
-    </ClInclude>
     <ClInclude Include="CLrGeometryRealization.h">
       <Filter>UI\其他</Filter>
     </ClInclude>
     <ClInclude Include="CLyricRendererBase.h">
-      <Filter>UI\其他</Filter>
-    </ClInclude>
-    <ClInclude Include="CDtLyricRendererBase.h">
-      <Filter>UI\其他</Filter>
-    </ClInclude>
-    <ClInclude Include="LrDef.h">
-      <Filter>UI\其他</Filter>
-    </ClInclude>
-    <ClInclude Include="CDtLrGeometryRealization.h">
       <Filter>UI\其他</Filter>
     </ClInclude>
   </ItemGroup>
@@ -233,13 +221,7 @@
     <ClCompile Include="Utils.cpp">
       <Filter>程序</Filter>
     </ClCompile>
-    <ClCompile Include="CVioletTheme.cpp">
-      <Filter>UI\其他</Filter>
-    </ClCompile>
     <ClCompile Include="CLrGeometryRealization.cpp">
-      <Filter>UI\其他</Filter>
-    </ClCompile>
-    <ClCompile Include="CDtLrGeometryRealization.cpp">
       <Filter>UI\其他</Filter>
     </ClCompile>
   </ItemGroup>

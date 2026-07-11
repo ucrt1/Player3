@@ -1,26 +1,24 @@
 ﻿#pragma once
-struct VEN_MINICOVER_CLICK : Dui::DUINMHDR {};
-
-class CVeMiniCover : public Dui::CElement
+class CVeMiniCover : public Dui::CElement, public eck::ITimeLine
 {
 private:
-	ID2D1Bitmap1
-		* m_pBmp{},			// 缓存一个较小尺寸的封面位图
-		* m_pBmpCoverUp{};	// 向上箭头
-	eck::CEasingCurve* m_pec{};
-	BOOLEAN m_bHover{};
-	BOOLEAN m_bLBtnDown{};
+    Dui::CBitmap m_BitmapCover{};
+    Dui::CBitmap m_BitmapArrowUp{};
+    eck::EasingCurve<eck::Easing::FOutCubic> m_ec{};
 
-	void OnColorSchemeChanged(BOOL bForceUpdateCover);
+    int m_msLastInterval{};
+
+    BOOLEAN m_bHover{};
+    BOOLEAN m_bLBtnDown{};
+    BOOLEAN m_bAnActive{};
+
+    void OnColorSchemeChanged(BOOL bForceUpdateCover) noexcept;
 public:
-	LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
+    LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
-	void SetBitmap(ID2D1Bitmap1* pBmp)
-	{
-		std::swap(m_pBmp, pBmp);
-		if (m_pBmp)
-			m_pBmp->AddRef();
-		if (pBmp)
-			pBmp->Release();
-	}
+    void SetCoverBitmap(const Dui::CBitmap& Bitmap) noexcept { m_BitmapCover = Bitmap; }
+
+    void TlTick(int ms) noexcept override;
+    BOOL TlIsValid() noexcept override { return m_bAnActive; }
+    int TlGetCurrentInterval() noexcept override { return m_msLastInterval; }
 };

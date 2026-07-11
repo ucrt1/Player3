@@ -1,20 +1,20 @@
 ﻿#pragma once
-class CCompPlayPageAn final : public Dui::CCompositorCornerMapping
+class CCompositorPlayPage final : public Dui::CCompositorCornerMapping
 {
 private:
-	ComPtr<ID2D1Bitmap1> pBitmapOverlay{};
+	ComPtr<ID2D1Bitmap1> m_pBitmapOverlay{};
 public:
 	void PostRender(Dui::COMP_RENDER_INFO& cri) noexcept override
 	{
 		cri.pDC->DrawBitmap(cri.pBitmap, cri.rcDst, 1.f,
-			D2D1_INTERPOLATION_MODE_LINEAR, cri.rcSrc, (D2D1_MATRIX_4X4_F*)AtMatrix());
-		if (pBitmapOverlay.Get())
-			cri.pDC->DrawBitmap(pBitmapOverlay.Get(), cri.rcDst, GetOpacity(),
-				D2D1_INTERPOLATION_MODE_LINEAR, nullptr, (D2D1_MATRIX_4X4_F*)AtMatrix());
+			D2D1_INTERPOLATION_MODE_LINEAR, cri.rcSrc, AtMatrixD2D());
+		if (m_pBitmapOverlay)
+			cri.pDC->DrawBitmap(m_pBitmapOverlay.Get(), cri.rcDst, GetOpacity(),
+				D2D1_INTERPOLATION_MODE_LINEAR, nullptr, AtMatrixD2D());
 	}
 
-	void SetOverlayBitmap(ID2D1Bitmap1* pBmp)
+	void SetOverlayBitmap(ID2D1Bitmap1* pBitmap)
 	{
-		pBitmapOverlay = pBmp;
+		m_pBitmapOverlay = pBitmap;
 	}
 };

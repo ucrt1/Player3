@@ -1,5 +1,12 @@
 ﻿#pragma once
-#include "LrDef.h"
+
+struct LRD_TEXT_METRICS
+{
+    float cxMain{};
+    float cyMain{};
+    float cxTranslation{};
+    float cyTranslation{};
+};
 
 enum : BYTE
 {

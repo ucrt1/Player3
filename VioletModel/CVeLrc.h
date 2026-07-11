@@ -87,6 +87,9 @@ private:
     float m_yMinMaxDelayPos{};
     float m_msItemAnDelay{ 200.f }; // 当前行发生更改时歌词行之间开始动画的延迟
     float m_cyLinePadding{ 10.f };  // 项目间距
+
+    int m_msLastInterval{};
+
     eck::Alignment m_eAlignH{ eck::Alignment::Near };// 水平对齐
 
     BOOLEAN m_bAnSelBkg{};          // 正在运行项目热点背景动画
@@ -158,6 +161,7 @@ public:
 
     void TlTick(int iMs) noexcept override;
     BOOL TlIsValid() noexcept override { return m_bAnSelBkg || m_bItemAnDelay; }
+    int TlGetCurrentInterval() noexcept override { return m_msLastInterval; }
 
     EckInlineNdCe BOOL IsEmpty() const noexcept { return m_vItem.empty(); }
 
