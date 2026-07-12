@@ -91,48 +91,48 @@ private:
 
     int m_msProgTimer{};
 private:
-    void ClearRes();
+    void ClearRes() noexcept;
 
-    BOOL OnCreate(HWND hWnd, CREATESTRUCT* pcs);
+    BOOL OnCreate(HWND hWnd, CREATESTRUCT* pcs) noexcept;
 
-    void PageShow(Page ePage, BOOL bAnimate);
-    void PageClearAnimation();
+    void PageShow(Page ePage, BOOL bAnimate) noexcept;
+    void PageClearAnimation() noexcept;
 
-    void OnPlayEvent(const PLAY_EVT_PARAM& e);
+    void OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept;
 
-    void UpdateButtonImageSize();
+    void UpdateButtonImageSize() noexcept;
 
-    void PpaPrepare();
-    void PpaEnd();
+    void PpaPrepare() noexcept;
+    void PpaEnd() noexcept;
     void PpaTick(int ms) noexcept;
 
-    void RePosPalyPanelControl();
+    void LayoutPlayPanel() noexcept;
 
-    void OnCoverUpdate();
+    void OnCoverUpdate() noexcept;
 
-    void OnColorSchemeChanged();
+    void OnColorSchemeChanged() noexcept;
 
-    void InvalidateRealizedImage();
+    void InvalidateRealizedImage() noexcept;
 
-    HRESULT TblCreateGhostWindow(PCWSTR pszText);
-    HRESULT TblSetup();
-    HRESULT TblUpdateToolBarIcon();
-    HRESULT TblCreateObjectAndInit();
-    BOOL TblOnCommand(WPARAM wParam);
-    HRESULT TblUpdateState();
-    HRESULT TblUpdateProgress();
-    HRESULT TblOnTaskbarButtonCreated();
+    HRESULT TblCreateGhostWindow(PCWSTR pszText) noexcept;
+    HRESULT TblSetup() noexcept;
+    HRESULT TblUpdateToolBarIcon() noexcept;
+    HRESULT TblInitialize() noexcept;
+    BOOL TblOnCommand(WPARAM wParam) noexcept;
+    HRESULT TblUpdateState() noexcept;
+    HRESULT TblUpdateProgress() noexcept;
+    HRESULT TblOnTaskbarButtonCreated() noexcept;
 
-    HRESULT SmtcInit() noexcept;
+    HRESULT SmtcInitialize() noexcept;
 #if VIOLET_WINRT
-    eck::CoroTask<> SmtcpCoroUpdateDisplay();
+    eck::CoroTask<> SmtcpCoroUpdateDisplay() noexcept;
 #endif
     HRESULT SmtcUpdateDisplay() noexcept;
     HRESULT SmtcOnCommonTick() noexcept;
     HRESULT SmtcUpdateTimeLineRange() noexcept;
     HRESULT SmtcUpdateTimeLinePosition() noexcept;
     HRESULT SmtcUpdateState() noexcept;
-    void SmtcUnInit() noexcept;
+    void SmtcUninitialize() noexcept;
 public:
     HWND Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
         int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData = nullptr) noexcept override;
@@ -141,8 +141,8 @@ public:
 
     LRESULT OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept override;
 
-    ID2D1Bitmap1* RealizeImage(AppImage n);
-    Dui::CBitmap RealizeImage2(AppImage n);
+    ID2D1Bitmap1* RealizeImage(AppImage n) noexcept;
+    Dui::CBitmap RealizeImage2(AppImage n) noexcept;
 
     void TlTick(int iMs) noexcept override;
     BOOL TlIsValid() noexcept override { return m_bPPAnActive; }

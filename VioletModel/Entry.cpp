@@ -48,8 +48,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
     eck::PtcCurrent()->UpdateDefaultColor();
 
-    App = new CApp{};
-    CApp::Init();
+    App = new CApplication{};
+    CApplication::Init();
     //#ifdef _DEBUG
     App->ListManager().Add()->LtmSetName(L"测试列表"sv);
     //#endif

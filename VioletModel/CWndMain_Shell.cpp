@@ -4,17 +4,20 @@
 static HRESULT ScaleImageForButton(
 	AppImage eImg,
 	int iDpi,
-	_Out_ IWICBitmapSource*& pSource)
+	_Out_ IWICBitmapSource*& pSource) noexcept
 {
 	const auto cxy = eck::DpiScale(20, iDpi);
 	ComPtr<IWICBitmapScaler> pScaler;
 	HRESULT hr;
 	if (FAILED(hr = eck::g_pWicFactory->CreateBitmapScaler(&pScaler)))
 		return hr;
-	return pScaler->Initialize(App->GetImage(eImg), cxy, cxy, WICBitmapInterpolationModeFant);
+	return pScaler->Initialize(
+		App->GetImage(eImg).Get(),
+		cxy, cxy,
+		WICBitmapInterpolationModeFant);
 }
 
-HRESULT CWindowMain::TblCreateGhostWindow(PCWSTR pszText)
+HRESULT CWindowMain::TblCreateGhostWindow(PCWSTR pszText) noexcept
 {
 	m_WndTbGhost.Create(pszText, WS_OVERLAPPEDWINDOW,
 		WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
@@ -22,7 +25,7 @@ HRESULT CWindowMain::TblCreateGhostWindow(PCWSTR pszText)
 	return S_OK;
 }
 
-HRESULT CWindowMain::TblSetup()
+HRESULT CWindowMain::TblSetup() noexcept
 {
 	m_pTaskbarList->UnregisterTab(m_WndTbGhost.Handle);
 	m_pTaskbarList->RegisterTab(m_WndTbGhost.Handle, Handle);
@@ -64,7 +67,7 @@ HRESULT CWindowMain::TblSetup()
 	return S_OK;
 }
 
-HRESULT CWindowMain::TblUpdateToolBarIcon()
+HRESULT CWindowMain::TblUpdateToolBarIcon() noexcept
 {
 	HICON hiPrev, hiNext;
 	ComPtr<IWICBitmapSource> pBitmap;
@@ -97,7 +100,7 @@ HRESULT CWindowMain::TblUpdateToolBarIcon()
 	return S_OK;
 }
 
-HRESULT CWindowMain::TblCreateObjectAndInit()
+HRESULT CWindowMain::TblInitialize() noexcept
 {
 	if (m_pTaskbarList.Get())
 		return S_FALSE;
@@ -105,7 +108,7 @@ HRESULT CWindowMain::TblCreateObjectAndInit()
 	return m_pTaskbarList->HrInit();
 }
 
-BOOL CWindowMain::TblOnCommand(WPARAM wParam)
+BOOL CWindowMain::TblOnCommand(WPARAM wParam) noexcept
 {
 	if (HIWORD(wParam) != THBN_CLICKED)
 		return FALSE;
@@ -124,7 +127,7 @@ BOOL CWindowMain::TblOnCommand(WPARAM wParam)
 	return FALSE;
 }
 
-HRESULT CWindowMain::TblUpdateState()
+HRESULT CWindowMain::TblUpdateState() noexcept
 {
 	HRESULT hr;
 	const auto& Player = App->Player();
@@ -147,7 +150,7 @@ HRESULT CWindowMain::TblUpdateState()
 	return m_pTaskbarList->ThumbBarUpdateButtons(m_WndTbGhost.Handle, 1, &tb);
 }
 
-HRESULT CWindowMain::TblUpdateProgress()
+HRESULT CWindowMain::TblUpdateProgress() noexcept
 {
 	const auto& Player = App->Player();
 	return m_pTaskbarList->SetProgressValue(Handle,
@@ -155,7 +158,7 @@ HRESULT CWindowMain::TblUpdateProgress()
 		ULONGLONG(Player.GetTotalTime() * 1000.));
 }
 
-HRESULT CWindowMain::TblOnTaskbarButtonCreated()
+HRESULT CWindowMain::TblOnTaskbarButtonCreated() noexcept
 {
 	HRESULT hr;
 	if (FAILED(hr = TblSetup()))
@@ -170,7 +173,7 @@ HRESULT CWindowMain::TblOnTaskbarButtonCreated()
 	return S_OK;
 }
 
-HRESULT CWindowMain::SmtcInit() noexcept
+HRESULT CWindowMain::SmtcInitialize() noexcept
 {
 #if VIOLET_WINRT
 	HRESULT hr;
@@ -244,7 +247,7 @@ HRESULT CWindowMain::SmtcInit() noexcept
 }
 
 #if VIOLET_WINRT
-eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay()
+eck::CoroTask<> CWindowMain::SmtcpCoroUpdateDisplay() noexcept
 {
 	const auto mi = App->Player().GetMusicSimpleData();// 复制一份
 	auto Token{ co_await eck::CoroGetPromiseToken() };
@@ -385,7 +388,7 @@ HRESULT CWindowMain::SmtcUpdateState() noexcept
 #endif// VIOLET_WINRT
 }
 
-void CWindowMain::SmtcUnInit() noexcept
+void CWindowMain::SmtcUninitialize() noexcept
 {
 #if VIOLET_WINRT
 	// 若不取消将导致内存泄漏

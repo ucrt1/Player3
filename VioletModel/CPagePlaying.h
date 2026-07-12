@@ -8,7 +8,7 @@ class CPagePlaying : public Dui::CElement
     friend class CWindowMain;
 private:
     CVeCover m_Cover{};
-    CVeLyric m_Lrc{};
+    CVeLyric m_Lyric{};
     Dui::CButton m_BTBack{};
     Dui::CLabel m_LATitle{};
     Dui::CLabel m_LAAlbum{};

@@ -198,6 +198,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CApp.h" />
+    <ClInclude Include="CApplicationBitmapPool.h" />
     <ClInclude Include="CBass.h" />
     <ClInclude Include="CCompPlayPageAn.h" />
     <ClInclude Include="CLyricRendererBase.h" />
@@ -230,6 +231,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CApp.cpp" />
+    <ClCompile Include="CApplicationBitmapPool.cpp" />
     <ClCompile Include="CBass.cpp" />
     <ClCompile Include="CLrGeometryRealization.cpp" />
     <ClCompile Include="CMediaLib.cpp" />
@@ -269,9 +271,6 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Skin\App.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

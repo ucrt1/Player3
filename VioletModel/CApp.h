@@ -1,62 +1,7 @@
 ﻿#pragma once
 #include "CPlayer.h"
 #include "CPlayListMgr.h"
-
-enum class AppImage
-{
-    About,
-    Add,
-    BigLogo,
-    Copy,
-    DefaultCover,
-    File,
-    Folder,
-    Home,
-    License,
-    List,
-    ListPlayList,
-    PlayerVolume0,
-    PlayerVolume1,
-    PlayerVolume2,
-    PlayerVolume3,
-    PlayerVolumeMute,
-    PlayPageDown,
-    PlayPageUp,
-    Plugin,
-    Settings,
-    WindowLogo,
-    ArrowCross,
-    ArrowRight3,
-    Circle,
-    Next,
-    Prev,
-    Triangle,
-    CircleOne,
-    ArrowRight1,
-    Lrc,
-    Pause,
-    NextSolid,
-    PrevSolid,
-    PauseSolid,
-    TriangleSolid,
-    LockSolid,
-    Cross,
-    CrossSolid,
-    Effect,
-    Locate,
-
-    Priv_InvertEnd,
-
-    AboutBg = Priv_InvertEnd,
-    AboutLogo,
-    AboutLogo12,
-    Aurorast,
-    AurorastDark,
-    SmallLogo,
-    Test,
-
-    Max
-};
+#include "CApplicationBitmapPool.h"
 
 constexpr PCWSTR MainWndPageName[]
 {
@@ -181,10 +126,9 @@ enum
 };
 
 class CWindowMain;
-class CApp
+class CApplication
 {
 private:
-    ComPtr<IWICBitmapSource> m_pBitmap[(size_t)AppImage::Max]{};
 
     BOOL m_bDarkMode{};
 
@@ -200,13 +144,11 @@ private:
 
     void LoadSkin(BOOL bLoadAll);
 public:
-    CApp();
+    CApplication();
 
     static void Init();
 
     const D2D1_COLOR_F& GetColor(GPal n) const;
-
-    EckInlineNdCe auto& GetImage(AppImage n) const noexcept { return m_pBitmap[size_t(n)]; }
 
     void SetDarkMode(BOOL bDarkMode);
 
@@ -220,4 +162,4 @@ public:
     EckInlineCe void SetMainWindow(CWindowMain* pWnd) { m_pWndMain = pWnd; }
 };
 
-extern CApp* App;
+extern CApplication* App;

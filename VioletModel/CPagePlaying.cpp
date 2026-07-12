@@ -5,9 +5,9 @@
 
 void CPagePlaying::UpdateBlurredCover()
 {
-    const auto cxElem = LogicalToPixel(GetWidth());
-    const auto cyElem = LogicalToPixel(GetHeight());
-    if (!cxElem || !cyElem)
+    const auto cxEle = LogicalToPixel(GetWidth());
+    const auto cyEle = LogicalToPixel(GetHeight());
+    if (!cxEle || !cyEle)
         return;
 
     // -- 取封面
@@ -33,33 +33,32 @@ void CPagePlaying::UpdateBlurredCover()
     D2D_POINT_2F pt;// 画出位置
 
     pWicCover->GetSize(&cx0, &cy0);
-    cyRgn = cyElem / cxElem * (float)cx0;
+    cyRgn = cyEle / cxEle * (float)cx0;
     if (cyRgn < cy0)// 1. 宽较大  cxClient / cxPic = cyClient / cyRgn
     {
-        cx = cxElem;
+        cx = cxEle;
         cy = cx * cy0 / cx0;
-        pt = { 0.f,(cyElem - cy) / 2 };
+        pt = { 0.f,(cyEle - cy) / 2 };
     }
     else// 2. 高较大  cyClient / cyPic = cxClient / cxRgn
     {
-        cy = (float)cyElem;
+        cy = (float)cyEle;
         cx = cx0 * cy / cy0;
-        pt = { (cxElem - cx) / 2,0.f };
+        pt = { (cxEle - cx) / 2,0.f };
     }
 
     // -- 缩放
 
-    ComPtr<IWICBitmapScaler> pWicBmpScaled;
-
-    eck::g_pWicFactory->CreateBitmapScaler(&pWicBmpScaled);
-    pWicBmpScaled->Initialize(
+    ComPtr<IWICBitmapScaler> pWicBitmapScaled;
+    eck::g_pWicFactory->CreateBitmapScaler(&pWicBitmapScaled);
+    pWicBitmapScaled->Initialize(
         pWicCover.Get(),
         (int)cx,
         (int)cy,
         WICBitmapInterpolationModeNearestNeighbor);
 
     ComPtr<ID2D1Bitmap1> pBitmapCover{};
-    GetDC()->CreateBitmapFromWicBitmap(pWicBmpScaled.Get(), pBitmapCover.AtClear());
+    GetDC()->CreateBitmapFromWicBitmap(pWicBitmapScaled.Get(), pBitmapCover.AtClear());
     m_Cover.SetBitmap(pBitmapCover.Get());
 
     // -- 模糊 
@@ -89,7 +88,7 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
     {
     case PlayEvent::CommonTick:
     {
-        m_Lrc.LrcSetCurrentLine(App->Player().GetCurrentLyricLine());
+        m_Lyric.LrcSetCurrentLine(App->Player().GetCurrentLyricLine());
     }
     break;
     case PlayEvent::Play:
@@ -101,12 +100,12 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
         m_LAAlbum.SetText(mi.rsAlbum.Data());
         m_LAArtist.SetText(mi.slArtist.FrontData());
 
-        m_Lrc.LrcInitialize(App->Player().GetLyric());
+        m_Lyric.LrcInitialize(App->Player().GetLyric());
     }
     break;
     case PlayEvent::Stop:
     {
-        m_Lrc.LrcClear();
+        m_Lyric.LrcClear();
         SetEmptyText();
     }
     break;
@@ -155,20 +154,20 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         UpdateBlurredCover();
 
         const auto cxMinGap = cx * 1.f / 20.f;
-        const Kw::Rect rcLrc
+        const Kw::Rect rcLyric
         {
             cx * 10.f / 20.f,
             DLrcTop,
             cx * 18.f / 20.f,
             cy - DLrcBottom
         };
-        m_Lrc.SetRect(rcLrc);
+        m_Lyric.SetRect(rcLyric);
 
         Kw::Rect rcCover;
         rcCover.left = cx * 1.f / 10.f;
         rcCover.top = cy * 15.f / 100.f;
         const auto cxyCover = std::min(
-            rcLrc.left - cxMinGap - rcCover.left,
+            rcLyric.left - cxMinGap - rcCover.left,
             cy * 4.f / 10.f);
         rcCover.right = rcCover.left + cxyCover;
         rcCover.bottom = rcCover.top + cxyCover;
@@ -234,7 +233,7 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         m_Cover.Create(nullptr, Dui::DES_VISIBLE, 0,
             50, 50, 200, 200, this);
 
-        m_Lrc.Create(nullptr, Dui::DES_VISIBLE, 0,
+        m_Lyric.Create(nullptr, Dui::DES_VISIBLE, 0,
             50, 260, 200, 100, this);
 
         m_LATitle.Create(nullptr, Dui::DES_VISIBLE, 0,
@@ -259,10 +258,10 @@ LRESULT CPagePlaying::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         auto& FontFactory = App->GetFontFactory();;
         FontFactory.NewFont(pTfLrc.AtSelfClear(),
             eck::Alignment::Near, eck::Alignment::Near, 25, 700);
-        m_Lrc.SetTextFormat(pTfLrc.Get());
+        m_Lyric.SetTextFormat(pTfLrc.Get());
         FontFactory.NewFont(pTfLrc.AtSelfClear(),
             eck::Alignment::Near, eck::Alignment::Near, 21, 500);
-        m_Lrc.SetTextFormatTranslation(pTfLrc.Get());
+        m_Lyric.SetTextFormatTranslation(pTfLrc.Get());
 
         SetEmptyText();
     }

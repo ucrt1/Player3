@@ -31,9 +31,6 @@
     <Filter Include="UI\元素">
       <UniqueIdentifier>{0e8e2e0a-f723-4d53-9e91-73e20fcfa1a1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UI\混合器">
-      <UniqueIdentifier>{d3bf331d-e3bc-4039-930d-8d47d08d299a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="窗口">
       <UniqueIdentifier>{d0e20229-bd56-4899-b4fd-4761ce841c0b}</UniqueIdentifier>
     </Filter>
@@ -41,7 +38,7 @@
       <UniqueIdentifier>{f6ff8827-a3b2-4fbf-aeff-54be55dc2447}</UniqueIdentifier>
     </Filter>
     <Filter Include="UI\其他">
-      <UniqueIdentifier>{a7bedadb-6b6b-4067-8919-08eb26c3e001}</UniqueIdentifier>
+      <UniqueIdentifier>{d3bf331d-e3bc-4039-930d-8d47d08d299a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -94,7 +91,7 @@
       <Filter>UI\元素</Filter>
     </ClInclude>
     <ClInclude Include="CCompPlayPageAn.h">
-      <Filter>UI\混合器</Filter>
+      <Filter>UI\其他</Filter>
     </ClInclude>
     <ClInclude Include="CMediaLib.h">
       <Filter>逻辑</Filter>
@@ -133,6 +130,9 @@
       <Filter>UI\其他</Filter>
     </ClInclude>
     <ClInclude Include="CLyricRendererBase.h">
+      <Filter>UI\其他</Filter>
+    </ClInclude>
+    <ClInclude Include="CApplicationBitmapPool.h">
       <Filter>UI\其他</Filter>
     </ClInclude>
   </ItemGroup>
@@ -224,6 +224,9 @@
     <ClCompile Include="CLrGeometryRealization.cpp">
       <Filter>UI\其他</Filter>
     </ClCompile>
+    <ClCompile Include="CApplicationBitmapPool.cpp">
+      <Filter>UI\其他</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc">
@@ -234,8 +237,5 @@
     <Image Include="Skin\App.ico">
       <Filter>资源文件</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

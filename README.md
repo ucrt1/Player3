@@ -1,10 +1,15 @@
-# VioletModel
+﻿# VioletModel
 
 ## 致谢
 
-排名不分先后
+按首字母排序。
 
-[Redmountain](https://github.com/Redmountain2018)，[Flysoft](https://github.com/FlysoftBeta)，[WhatDamon](https://github.com/WhatDamon)，[nlmhc](https://github.com/nlmhc)，[Lonyou](https://github.com/Vkango)，[QingKong](https://github.com/QingKong-s)
+- [Flysoft](https://github.com/FlysoftBeta)
+- [nlmhc](https://github.com/nlmhc)
+- [QingKong](https://github.com/QingKong-s)
+- [Redmountain](https://github.com/Redmountain2018)
+- [Vkango](https://github.com/Vkango)
+- [WhatDamon](https://github.com/WhatDamon)
 
 ## 使用的第三方库或参考的代码
 
@@ -27,28 +32,7 @@ MIT License
 
 **[zlib](https://www.zlib.net/)**
 
-```
-  Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler
-
-  This software is provided 'as-is', without any express or implied
-  warranty.  In no event will the authors be held liable for any damages
-  arising from the use of this software.
-
-  Permission is granted to anyone to use this software for any purpose,
-  including commercial applications, and to alter it and redistribute it
-  freely, subject to the following restrictions:
-
-  1. The origin of this software must not be misrepresented; you must not
-     claim that you wrote the original software. If you use this software
-     in a product, an acknowledgment in the product documentation would be
-     appreciated but is not required.
-  2. Altered source versions must be plainly marked as such, and must not be
-     misrepresented as being the original software.
-  3. This notice may not be removed or altered from any source distribution.
-
-  Jean-loup Gailly        Mark Adler
-  jloup@gzip.org          madler@alumni.caltech.edu
-```
+zlib License
 
 **[yyjson](https://github.com/ibireme/yyjson)**
 

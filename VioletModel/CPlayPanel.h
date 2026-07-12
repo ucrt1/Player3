@@ -3,7 +3,6 @@
 
 class CPlayPanel :public Dui::CElement
 {
-    friend class CWindowMain;
 private:
     CVeMiniCover m_Cover{};
     Dui::CLabel m_LATitle{};

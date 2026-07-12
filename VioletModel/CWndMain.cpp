@@ -17,14 +17,14 @@ EckInlineNdCe AppImage AutoNextModeToGImg(AutoNextMode eMode) noexcept
     ECK_UNREACHABLE;
 }
 
-void CWindowMain::ClearRes()
+void CWindowMain::ClearRes() noexcept
 {
     for (auto& e : m_vBmpRealization)
         SafeRelease(e);
     SafeRelease(m_pBmpCover);
 }
 
-BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
+BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs) noexcept
 {
     App->SetDarkMode(ShouldAppsUseDarkMode());
     CBass::Init();
@@ -37,7 +37,7 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
     DwmExtendFrameIntoClientArea(hWnd, &m);
     eck::EnableWindowMica(hWnd);
 
-    SmtcInit();
+    SmtcInitialize();
 
     BlurInitialize();
     BlurSetUseLayer(TRUE);
@@ -150,7 +150,7 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs)
     return TRUE;
 }
 
-void CWindowMain::PageShow(Page ePage, BOOL bAnimate)
+void CWindowMain::PageShow(Page ePage, BOOL bAnimate) noexcept
 {
     __assume(ePage < Page::Max);
     const int idxShow = (int)ePage;
@@ -182,7 +182,7 @@ void CWindowMain::PageShow(Page ePage, BOOL bAnimate)
     }
 }
 
-void CWindowMain::PageClearAnimation()
+void CWindowMain::PageClearAnimation() noexcept
 {
     if (!m_pAnPage)
         return;
@@ -193,14 +193,14 @@ HWND CWindowMain::Create(PCWSTR pszText, DWORD dwStyle, DWORD dwExStyle,
     int x, int y, int cx, int cy, HWND hParent, HMENU hMenu, PCVOID pData) noexcept
 {
     TblCreateGhostWindow(pszText);
-    TblCreateObjectAndInit();
+    TblInitialize();
     const auto hWnd = __super::Create(pszText, dwStyle, dwExStyle,
         x, y, cx, cy, hParent, hMenu, pData);
     TblOnTaskbarButtonCreated();
     return hWnd;
 }
 
-void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e)
+void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
 {
     switch (e.eEvent)
     {
@@ -308,7 +308,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 CyPageTitle + DTopPageTitle + CxPageIntPadding,
                 cxClient,
                 cyClient - CxTabToPagePadding });
-            RePosPalyPanelControl();
+            LayoutPlayPanel();
         OnCoverUpdate();
         return lResult;
     }
@@ -335,7 +335,7 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         KillTimer(Handle, IDT_COMM_TICK);
         __super::OnMessage(uMsg, wParam, lParam);
         m_WndTbGhost.Destroy();
-        SmtcUnInit();
+        SmtcUninitialize();
         ClearRes();
         PostQuitMessage(0);
         return 0;
@@ -453,7 +453,7 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     return __super::OnElementNotify(pEle, pnm);
 }
 
-ID2D1Bitmap1* CWindowMain::RealizeImage(AppImage n)
+ID2D1Bitmap1* CWindowMain::RealizeImage(AppImage n) noexcept
 {
     if (!m_vBmpRealization[(size_t)n])
     {
@@ -465,7 +465,7 @@ ID2D1Bitmap1* CWindowMain::RealizeImage(AppImage n)
     return m_vBmpRealization[(size_t)n];
 }
 
-Dui::CBitmap CWindowMain::RealizeImage2(AppImage n)
+Dui::CBitmap CWindowMain::RealizeImage2(AppImage n) noexcept
 {
     Dui::CBitmap Bitmap;
     Bitmap.Set(RealizeImage(n));
@@ -520,7 +520,7 @@ void CWindowMain::TlTick(int iMs) noexcept
 //    return m_WndLrc.IsValid() && m_WndLrc.IsVisible();
 //}
 
-void CWindowMain::UpdateButtonImageSize()
+void CWindowMain::UpdateButtonImageSize() noexcept
 {
     constexpr D2D1_SIZE_F Size{ CxyCircleButtonImage, CxyCircleButtonImage };
     //m_BTPrev.SetImageSize(Size);
@@ -530,7 +530,7 @@ void CWindowMain::UpdateButtonImageSize()
     //m_BTVol.SetImageSize(Size);
 }
 
-void CWindowMain::PpaPrepare()
+void CWindowMain::PpaPrepare() noexcept
 {
     ECKBOOLNOT(m_bPPAnReverse);
     const auto kBegin = m_bPPAnReverse ? 0.f : 1.f;
@@ -552,7 +552,7 @@ void CWindowMain::PpaPrepare()
     KctWake();
 }
 
-void CWindowMain::PpaEnd()
+void CWindowMain::PpaEnd() noexcept
 {
     m_bPPAnActive = FALSE;
     ZeroMemory(m_bPPCornerAnActive, sizeof(m_bPPCornerAnActive));
@@ -664,7 +664,7 @@ void CWindowMain::PpaTick(int ms) noexcept
     Redraw(FALSE);
 }
 
-void CWindowMain::RePosPalyPanelControl()
+void CWindowMain::LayoutPlayPanel() noexcept
 {
     const auto cxClient = GetClientWidthLogical();
     const auto cyClient = GetClientHeightLogical();
@@ -691,7 +691,7 @@ void CWindowMain::RePosPalyPanelControl()
     m_TBProgress.SetPosition((cxClient - CxProgress) / 2.f, cyClient - CyProgress - 6.f);
 }
 
-void CWindowMain::OnCoverUpdate()
+void CWindowMain::OnCoverUpdate() noexcept
 {
     const auto pBmp = m_PagePlaying.m_pBmpCover;
     if (pBmp)
@@ -701,7 +701,7 @@ void CWindowMain::OnCoverUpdate()
     }
 }
 
-void CWindowMain::OnColorSchemeChanged()
+void CWindowMain::OnColorSchemeChanged() noexcept
 {
     m_BTPrev.SetIcon(RealizeImage2(AppImage::Prev));
     m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
@@ -712,7 +712,7 @@ void CWindowMain::OnColorSchemeChanged()
     m_BTVol.SetIcon(RealizeImage2(AppImage::PlayerVolume3));
 }
 
-void CWindowMain::InvalidateRealizedImage()
+void CWindowMain::InvalidateRealizedImage() noexcept
 {
     for (auto& e : m_vBmpRealization)
         SafeRelease(e);

@@ -1,60 +1,6 @@
 ﻿#include "pch.h"
 #include "CApp.h"
 
-constexpr PCWSTR ImgFile[]
-{
-	LR"(About.png)",
-	LR"(Add.png)",
-	LR"(BigLogo.png)",
-	LR"(Copy.png)",
-	LR"(DefaultCover.png)",
-	LR"(File.png)",
-	LR"(Folder.png)",
-	LR"(Home.png)",
-	LR"(License.png)",
-	LR"(List.png)",
-	LR"(ListPlayList.png)",
-	LR"(PlayerVol0.png)",
-	LR"(PlayerVol1.png)",
-	LR"(PlayerVol2.png)",
-	LR"(PlayerVol3.png)",
-	LR"(PlayerVolMute.png)",
-	LR"(PlayPageDown.png)",
-	LR"(PlayPageUp.png)",
-	LR"(Plugin.png)",
-	LR"(Settings.png)",
-	LR"(WindowLogo.png)",
-	LR"(ArrowCross.png)",
-	LR"(ArrowRight3.png)",
-	LR"(Circle.png)",
-	LR"(Next.png)",
-	LR"(Prev.png)",
-	LR"(Triangle.png)",
-	LR"(CircleOne.png)",
-	LR"(ArrowRight1.png)",
-	LR"(Lrc.png)",
-	LR"(Pause.png)",
-	LR"(NextSolid.png)",
-	LR"(PrevSolid.png)",
-	LR"(PauseSolid.png)",
-	LR"(TriangleSolid.png)",
-	LR"(LockSolid.png)",
-	LR"(Cross.png)",
-	LR"(CrossSolid.png)",
-	LR"(Effect.png)",
-    LR"(Locate.png)",
-
-	LR"(AboutBg.png)",
-	LR"(AboutLogo.png)",
-	LR"(AboutLogo12.png)",
-	LR"(Aurorast.png)",
-	LR"(AurorastDark.png)",
-	LR"(SmallLogo.png)",
-	LR"(Test.jpg)",
-};
-
-static_assert(ARRAYSIZE(ImgFile) == (size_t)AppImage::Max);
-
 constexpr static D2D1_COLOR_F PalLight[]
 {
 	Dui::StMakeBackgroundColorLight(0.5f),
@@ -101,9 +47,9 @@ constexpr static D2D1_COLOR_F PalDark[]
 };
 
 
-CApp* App{};
+CApplication* App{};
 
-IWICBitmapSource* CApp::InvertSkin(IWICBitmapSource* pBmp)
+IWICBitmapSource* CApplication::InvertSkin(IWICBitmapSource* pBmp)
 {
 	constexpr D2D1_RENDER_TARGET_PROPERTIES Prop
 	{
@@ -151,20 +97,20 @@ IWICBitmapSource* CApp::InvertSkin(IWICBitmapSource* pBmp)
 	return pNewBitmap;
 }
 
-void CApp::LoadSkin(BOOL bLoadAll)
+void CApplication::LoadSkin(BOOL bLoadAll)
 {
 	auto rsPath{ eck::GetRunningPath() };
 	rsPath.PushBack(LR"(\Skin\)");
 	const auto pszFileName = rsPath.PushBack(48);
-	const auto iEnd = bLoadAll ? ARRAYSIZE(ImgFile) : (size_t)AppImage::Priv_InvertEnd;
+	const auto iEnd = bLoadAll ? ARRAYSIZE(ApplicationBitmapFile) : (size_t)AppImage::Priv_InvertEnd;
 	for (size_t i{}; i < iEnd; ++i)
 	{
-		wcscpy(pszFileName, ImgFile[i]);
+		wcscpy(pszFileName, ApplicationBitmapFile[i]);
 		if (FAILED(eck::WicLoadSource(m_pBitmap[i].AtSelfClear(), rsPath.Data())))
 		{
             MessageBoxW(
 				nullptr,
-				eck::Format(L"缺少资源文件：%s", ImgFile[i]).Data(),
+				eck::Format(L"缺少资源文件：%s", ApplicationBitmapFile[i]).Data(),
 				L"VioletModel",
 				MB_ICONERROR);
 			abort();
@@ -172,7 +118,7 @@ void CApp::LoadSkin(BOOL bLoadAll)
 	}
 }
 
-CApp::CApp()
+CApplication::CApplication()
 {
 	m_ptcUiThread = eck::PtcCurrent();
 	EckAssert(m_ptcUiThread);
@@ -180,14 +126,14 @@ CApp::CApp()
 	LoadSkin(TRUE);
 }
 
-void CApp::Init() {}
+void CApplication::Init() {}
 
-const D2D1_COLOR_F& CApp::GetColor(GPal n) const
+const D2D1_COLOR_F& CApplication::GetColor(GPal n) const
 {
 	return m_bDarkMode ? PalDark[size_t(n)] : PalLight[size_t(n)];
 }
 
-void CApp::SetDarkMode(BOOL bDarkMode)
+void CApplication::SetDarkMode(BOOL bDarkMode)
 {
 	if (m_bDarkMode == bDarkMode)
 		return;
