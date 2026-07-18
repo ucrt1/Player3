@@ -1,5 +1,4 @@
 ﻿#include "pch.h"
-
 #include "CWndMain.h"
 
 const static UINT MsgTaskbarButtonCreated{ RegisterWindowMessageW(L"TaskbarButtonCreated") };
@@ -15,13 +14,6 @@ EckInlineNdCe AppImage AutoNextModeToGImg(AutoNextMode eMode) noexcept
     case AutoNextMode::Single: return AppImage::ArrowRight1;
     }
     ECK_UNREACHABLE;
-}
-
-void CWindowMain::ClearRes() noexcept
-{
-    for (auto& e : m_vBmpRealization)
-        SafeRelease(e);
-    SafeRelease(m_pBmpCover);
 }
 
 BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs) noexcept
@@ -142,7 +134,6 @@ BOOL CWindowMain::OnCreate(HWND hWnd, CREATESTRUCT* pcs) noexcept
     //
     UpdateButtonImageSize();
     m_PagePlaying.UpdateBlurredCover();
-    OnCoverUpdate();
 
     OnColorSchemeChanged();
     PageShow(Page::List, FALSE);
@@ -219,8 +210,10 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
     break;
     case PlayEvent::Play:
     {
+        m_pAtlas->CoverUpdate(App->Player().GetCover().Get());
+        m_PagePlaying.UpdateBlurredCover();
+
         m_msProgTimer = 0;
-        OnCoverUpdate();
         SmtcUpdateTimeLineRange();
         SmtcUpdateDisplay();
         TblUpdateProgress();
@@ -238,7 +231,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
     case PlayEvent::Resume:
     {
         SetTimer(Handle, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
-        m_BTPlay.SetIcon(RealizeImage2(AppImage::Pause));
+        m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Pause));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -254,7 +247,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
     case PlayEvent::Pause:
     {
         KillTimer(Handle, IDT_COMM_TICK);
-        m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
+        m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Triangle));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -309,7 +302,6 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 cxClient,
                 cyClient - CxTabToPagePadding });
             LayoutPlayPanel();
-        OnCoverUpdate();
         return lResult;
     }
 
@@ -336,7 +328,6 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
         __super::OnMessage(uMsg, wParam, lParam);
         m_WndTbGhost.Destroy();
         SmtcUninitialize();
-        ClearRes();
         PostQuitMessage(0);
         return 0;
     case WM_SYSCOLORCHANGE:
@@ -346,7 +337,6 @@ LRESULT CWindowMain::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
     {
         if (eck::MsgOnSettingChangeMainWindow(Handle, wParam, lParam, TRUE))
         {
-            InvalidateRealizedImage();
             const auto bDark = ShouldAppsUseDarkMode();
             App->SetDarkMode(bDark);
             OnColorSchemeChanged();
@@ -382,8 +372,8 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     {
     case ELEN_PAGE_CHANGE:
     {
-        const auto* const p = (Dui::NMLTITEMINDEX*)lParam;
-        PageShow((Page)p->idx, TRUE);
+        //const auto* const p = (Dui::NMLTITEMINDEX*)lParam;
+        //PageShow((Page)p->idx, TRUE);
     }
     return 0;
 
@@ -432,7 +422,7 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
         else if (pEle == &m_BTAutoNext)
         {
             const auto r = App->Player().NextAutoNextMode();
-            m_BTAutoNext.SetIcon(RealizeImage2(AutoNextModeToGImg(r)));
+            m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetSubImage(AutoNextModeToGImg(r)));
             m_BTAutoNext.Invalidate();
         }
         else if (pEle == &m_BTVol)
@@ -451,25 +441,6 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
     break;
     }
     return __super::OnElementNotify(pEle, pnm);
-}
-
-ID2D1Bitmap1* CWindowMain::RealizeImage(AppImage n) noexcept
-{
-    if (!m_vBmpRealization[(size_t)n])
-    {
-        GetDeviceContext()->CreateBitmapFromWicBitmap(
-            App->GetImage(n).Get(),
-            (const D2D1_BITMAP_PROPERTIES1*)nullptr,
-            &m_vBmpRealization[(size_t)n]);
-    }
-    return m_vBmpRealization[(size_t)n];
-}
-
-Dui::CBitmap CWindowMain::RealizeImage2(AppImage n) noexcept
-{
-    Dui::CBitmap Bitmap;
-    Bitmap.Set(RealizeImage(n));
-    return Bitmap;
 }
 
 void CWindowMain::TlTick(int iMs) noexcept
@@ -545,7 +516,7 @@ void CWindowMain::PpaPrepare() noexcept
     if (!m_bPPAnReverse)
     {
         m_NormalPageContainer.SetVisible(TRUE);
-        m_PlayPanel.m_Cover.SetVisible(TRUE);
+        m_PlayPanel.GetCoverElement().SetVisible(TRUE);
         m_PlayPanel.SetVisible(TRUE);
     }
     m_PagePlaying.SetVisible(TRUE);
@@ -691,29 +662,13 @@ void CWindowMain::LayoutPlayPanel() noexcept
     m_TBProgress.SetPosition((cxClient - CxProgress) / 2.f, cyClient - CyProgress - 6.f);
 }
 
-void CWindowMain::OnCoverUpdate() noexcept
-{
-    const auto pBmp = m_PagePlaying.m_pBmpCover;
-    if (pBmp)
-    {
-        m_CompPlayPageAn.SetOverlayBitmap(pBmp);
-        m_PlayPanel.m_Cover.SetCoverBitmap(pBmp);
-    }
-}
-
 void CWindowMain::OnColorSchemeChanged() noexcept
 {
-    m_BTPrev.SetIcon(RealizeImage2(AppImage::Prev));
-    m_BTPlay.SetIcon(RealizeImage2(AppImage::Triangle));
-    m_BTNext.SetIcon(RealizeImage2(AppImage::Next));
-    m_BTAutoNext.SetIcon(RealizeImage2(
+    m_BTPrev.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Previous));
+    m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Triangle));
+    m_BTNext.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Next));
+    m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetSubImage(
         AutoNextModeToGImg(App->Player().GetAutoNextMode())));
-    m_BTLrc.SetIcon(RealizeImage2(AppImage::Lrc));
-    m_BTVol.SetIcon(RealizeImage2(AppImage::PlayerVolume3));
-}
-
-void CWindowMain::InvalidateRealizedImage() noexcept
-{
-    for (auto& e : m_vBmpRealization)
-        SafeRelease(e);
+    m_BTLrc.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Lyric));
+    m_BTVol.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Speaker));
 }

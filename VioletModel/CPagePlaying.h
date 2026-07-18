@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include "CVeCover.h"
 #include "CVeLrc.h"
-#include "CApp.h"
+#include "CVioletAtlas.h"
+#include "CVioletElement.h"
 
-class CPagePlaying : public Dui::CElement
+class CPagePlaying : public CVioletElement
 {
-    friend class CWindowMain;
 private:
     CVeCover m_Cover{};
     CVeLyric m_Lyric{};
@@ -15,8 +15,6 @@ private:
     Dui::CLabel m_LAArtist{};
 
     ComPtr<ID2D1Bitmap1> m_pBitmapBlurredCover{};
-
-    void UpdateBlurredCover();
 
     void OnPlayEvent(const PLAY_EVT_PARAM& e);
 
@@ -36,4 +34,6 @@ public:
         m_LAAlbum.SetTextFormat(pTf);
         m_LAArtist.SetTextFormat(pTf);
     }
+
+    void UpdateBlurredCover();
 };

@@ -8,20 +8,20 @@ private:
     constexpr static int DefaultCoverIndex{};
     struct LIST_INFO
     {
-        ComPtr<eck::CD2DImageList> pIl;
+        RefPtr<eck::CD2DImageList> pIl;
     };
 
     struct TSKPARAM_LOAD_META_DATA
     {
-        std::shared_ptr<CPlayList> pList;
+        RefPtr<CPlayList> pList;
         int idxBeginDisplay{};
         int idxEndDisplay{};
-        ComPtr<eck::CD2DImageList> pIl;
+        RefPtr<eck::CD2DImageList> pIl;
         std::vector<int> vItem;
     };;
 
     Dui::CEdit m_EDSearch{};
-    Dui::CTabList m_TBLPlayList{};
+    Dui::CListView m_TBLPlayList{};
     eck::CLinearLayoutV m_LytPlayList{};
 
     Dui::CButton m_BTAddFile{};
@@ -29,7 +29,7 @@ private:
     eck::CLayoutDummy m_TopBarDummySpace{};
     Dui::CEdit m_EDSearchItem{};
     eck::CLinearLayoutH m_LytTopBar{};
-    Dui::CList m_GLList{};
+    Dui::CListView m_GLList{};
     eck::CLinearLayoutV m_LytList{};
 
     eck::CLinearLayoutH m_Lyt{};
@@ -42,12 +42,11 @@ private:
 
     BOOL m_bSearchItemEditEmpty{};
 
-    eck::CoroTask<void> PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param);
-    void PlMdBeginLoad(int idxBegin, int idxEnd, int idxList = -1);
-    void PlMdCheckVisibleItem(int idxList);
+    eck::CoroTask<void> PlLoadMetadata(TSKPARAM_LOAD_META_DATA&& Param);
+    void PlBeginLoadMetadata(int idxBegin, int idxEnd, int idxList = -1);
+    void PlCheckVisibleItemMetadata(int idxList);
 
-    CPlayList* PlCurrent();
-    std::shared_ptr<CPlayList> PlCurrentShared();
+    const RefPtr<CPlayList>& PlCurrent() const noexcept;
 
     // 使用搜索编辑框内容搜索列表
     // 返回项目数

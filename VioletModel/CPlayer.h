@@ -71,7 +71,6 @@ private:
 
     BOOLEAN m_bActive{};
     BOOLEAN m_bPaused{};// 是否暂停
-    BOOLEAN m_bDefCover{ TRUE };// 是否使用默认封面
 
 
     PlayResult PlayWorker(int idx) noexcept;
@@ -108,6 +107,7 @@ public:
     void SetList(RefPtr<CPlayList> pPlayList) noexcept;
     EckInlineNdCe auto& GetList() const noexcept { return m_pPlayList; }
 
+    // 可能返回nullptr
     EckInlineNdCe auto& GetCover() const noexcept { return m_pBitmapCover; }
     EckInlineNdCe auto& GetEventChain() noexcept { return m_EventChain; }
     EckInlineNdCe auto& GetBass() noexcept { return m_Bass; }
@@ -122,6 +122,4 @@ public:
     EckInlineNdCe DWORD GetLastHResultOrBassError() const noexcept { return m_dwLastHrOrBassErr; }
 
     EckInlineNdCe int GetCurrentLyricLine() const noexcept { return m_idxCurrLrc; }
-
-    EckInlineNdCe BOOL IsDefaultCover() const noexcept { return m_bDefCover; }
 };

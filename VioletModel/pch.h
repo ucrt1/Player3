@@ -1,6 +1,5 @@
 ﻿#pragma once
 #define _CRTDBG_MAP_ALLOC	1
-#define ECK_OPT_NO_YYJSON	1
 #define ECK_OPT_NO_PUGIXML	1
 #define VIOLET_WINRT		0
 
@@ -28,6 +27,7 @@
 #include "eck\CTrivialBuffer.h"
 #include "eck\ImageHelper.h"
 #include "eck\RefPtr.h"
+#include "eck\Json.h"
 
 #if VIOLET_WINRT
 //#include "eck\WinRtDCompInterop.h"
@@ -61,6 +61,8 @@ namespace Dui = eck::Dui;
 namespace Tag = eck::MediaTag;
 namespace Lyric = eck::Lyric;
 namespace Kw = eck::Kw;
+namespace Json = eck::Json;
+
 using namespace std::literals;
 
 using Dui::EagPoint;

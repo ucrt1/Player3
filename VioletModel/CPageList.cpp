@@ -10,10 +10,10 @@ constexpr std::wstring_view ColumnName[]
     L"时长"sv,
 };
 
-eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
+eck::CoroTask<void> CPageList::PlLoadMetadata(TSKPARAM_LOAD_META_DATA&& Param_)
 {
     const auto Param{ std::move(Param_) };
-    const auto pList = Param.pList.get();
+    const auto& pList = Param.pList;
     struct TMP
     {
         Tag::SimpleData mi{};
@@ -24,7 +24,6 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
     auto UiThread{ eck::CoroCaptureUiThread() };
 
     std::vector<TMP> vTmp(Param.vItem.size());
-    pList->TskIncRef();
     EckCounter(Param.vItem.size(), i)
     {
         auto& e = pList->FlAtAbsolutely(Param.vItem[i]);
@@ -92,7 +91,6 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
         }
     }
     co_await UiThread;
-    ECK_DUILOCK;
 
     EckCounter(Param.vItem.size(), i)
     {
@@ -100,7 +98,7 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
         auto& f = vTmp[i];
         if (f.pD2DBitmap.Get())
         {
-            const auto idxImg = Param.pIl->AddImage(f.pD2DBitmap.Get());
+            const auto idxImg = Param.pIl->Add(f.pD2DBitmap.Get());
             if (idxImg >= 0)
                 e.idxImage = idxImg;
         }
@@ -124,10 +122,10 @@ eck::CoroTask<void> CPageList::PlMdTskLoad(TSKPARAM_LOAD_META_DATA&& Param_)
     pList->TskDecRef();
 }
 
-void CPageList::PlMdBeginLoad(int idxBegin, int idxEnd, int idxList)
+void CPageList::PlBeginLoadMetadata(int idxBegin, int idxEnd, int idxList)
 {
     if (idxList < 0)
-        idxList = m_TBLPlayList.GetCurrentSelection();
+        idxList = m_TBLPlayList.GetController().ItmGetSelected();
     if (idxList < 0)
         return;
     const auto& e = App->ListManager().At(idxList);
@@ -136,7 +134,7 @@ void CPageList::PlMdBeginLoad(int idxBegin, int idxEnd, int idxList)
         .pList = e.pList,
         .idxBeginDisplay = idxBegin,
         .idxEndDisplay = idxEnd,
-        .pIl = e.pImageList
+        .pIl = m_vListInfo[idxList].pIl
     };
     for (int i = idxBegin; i <= idxEnd; ++i)
     {
@@ -149,29 +147,22 @@ void CPageList::PlMdBeginLoad(int idxBegin, int idxEnd, int idxList)
             Param.vItem.emplace_back(i);
     }
     if (!Param.vItem.empty())
-        PlMdTskLoad(std::move(Param));
+        PlLoadMetadata(std::move(Param));
 }
 
-void CPageList::PlMdCheckVisibleItem(int idxList)
+void CPageList::PlCheckVisibleItemMetadata(int idxList)
 {
     int idx0, idx1;
     m_GLList.GetVisibleRange(idx0, idx1);
-    PlMdBeginLoad(idx0, idx1, idxList);
+    PlBeginLoadMetadata(idx0, idx1, idxList);
 }
 
-CPlayList* CPageList::PlCurrent()
+const RefPtr<CPlayList>& CPageList::PlCurrent() const noexcept
 {
-    const auto idx = m_TBLPlayList.GetCurrentSelection();
-    if (idx < 0)
-        return nullptr;
-    return App->ListManager().AtList(idx).get();
-}
-std::shared_ptr<CPlayList> CPageList::PlCurrentShared()
-{
-    const auto idx = m_TBLPlayList.GetCurrentSelection();
+    const auto idx = m_TBLPlayList.GetController().ItmGetSelected();
     if (idx < 0)
         return {};
-    return App->ListManager().AtList(idx);
+    return App->ListManager().At(idx).pList;
 }
 
 int CPageList::PlSearchEditContent(CPlayList* pList)
@@ -256,7 +247,6 @@ HRESULT CPageList::OnMenuAddFile(CPlayList* pList, int idxInsert)
         return hr;
     ComPtr<IShellItem> psi;
     PWSTR pszFile;
-    ECK_DUILOCK;
     EckCounter(cItems, i)
     {
         psia->GetItemAt(i, psi.AtClear());
@@ -315,7 +305,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 m_GLList.SetItemCount(cItem);
                 m_GLList.ReCalc();
                 m_GLList.Invalidate();
-                PlMdCheckVisibleItem(p->idx);
+                PlCheckVisibleItemMetadata(p->idx);
             }
             return 0;
             }
@@ -378,10 +368,10 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                     App->UiThreadContext()->Callback.EnQueueCallback(
                         [this, idx0 = p->idxBegin, idx1 = p->idxEnd]
                         {
-                            PlMdBeginLoad(idx0, idx1);
+                            PlBeginLoadMetadata(idx0, idx1);
                         });
                 else
-                    PlMdBeginLoad(p->idxBegin, p->idxEnd);
+                    PlBeginLoadMetadata(p->idxBegin, p->idxEnd);
             }
             return 0;
             }
@@ -397,7 +387,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 m_GLList.SetItemCount(pList->FlGetCount());
                 m_GLList.ReCalc();
                 m_GLList.Invalidate();
-                PlMdCheckVisibleItem(-1);
+                PlCheckVisibleItemMetadata(-1);
             }
             return 0;
             }
@@ -428,7 +418,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 m_GLList.InvalidateCache();
                 m_GLList.ReCalc();
                 m_GLList.Invalidate();
-                PlMdCheckVisibleItem(-1);
+                PlCheckVisibleItemMetadata(-1);
             }
             return 0;
             }
@@ -437,7 +427,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 
     case WM_SIZE:
         m_Lyt.Arrange(GetWidth(), GetHeight());
-        PlMdCheckVisibleItem(-1);
+        PlCheckVisibleItemMetadata(-1);
         break;
 
     case WM_SETFONT:
@@ -562,7 +552,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
             IlReCreate(0, TRUE);
             m_GLList.SetImageList(App->ListManager().At(0).pImageList.Get());
             m_TBLPlayList.SelectItemForClick(0);
-            PlMdCheckVisibleItem(0);
+            PlCheckVisibleItemMetadata(0);
         }
     }
     break;
@@ -582,7 +572,7 @@ LRESULT CPageList::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
                 const auto& e = App->ListManager().At(idx);
                 m_GLList.SetImageList(e.pImageList.Get());
                 m_GLList.Invalidate();
-                PlMdCheckVisibleItem(-1);
+                PlCheckVisibleItemMetadata(-1);
             });
     }
     break;

@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "CPlayer.h"
 #include "CPlayListMgr.h"
-#include "CApplicationBitmapPool.h"
 
 constexpr PCWSTR MainWndPageName[]
 {
@@ -69,31 +68,6 @@ CxyLrcPadding = 8,
 DWndLogoToTab = 20
 ;
 
-enum class GPal
-{
-    TabPanelBk,
-
-    PlayPanelBk,
-    PlayPanelBlurMask,
-    PlayPanelWatermark,
-
-    VolBarBk,
-    VolBarBorder,
-
-    PlayBtnBkNormal,
-    PlayBtnBkHot,
-    PlayBtnBkSelected,
-
-    PlayPageOverlay,
-
-    ScrollBarThumb,
-
-    LrcTextNormal,
-    LrcTextHighlight,
-
-    Max
-};
-
 // 所有的ID，包括窗口定时器、WM_COMMAND、控件ID等
 enum
 {
@@ -129,9 +103,6 @@ class CWindowMain;
 class CApplication
 {
 private:
-
-    BOOL m_bDarkMode{};
-
     CPlayer m_Player{};
     CPlayListManager m_ListManager{};
 
@@ -139,18 +110,10 @@ private:
 
     eck::ThreadContext* m_ptcUiThread{};
     CWindowMain* m_pWndMain{};
-
-    IWICBitmapSource* InvertSkin(IWICBitmapSource* pBmp);
-
-    void LoadSkin(BOOL bLoadAll);
 public:
     CApplication();
 
     static void Init();
-
-    const D2D1_COLOR_F& GetColor(GPal n) const;
-
-    void SetDarkMode(BOOL bDarkMode);
 
     EckInlineNdCe auto& Player() { return m_Player; }
     EckInlineNdCe auto& ListManager() { return m_ListManager; }

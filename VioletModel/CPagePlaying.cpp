@@ -10,12 +10,6 @@ void CPagePlaying::UpdateBlurredCover()
     if (!cxEle || !cyEle)
         return;
 
-    // -- 取封面
-
-    auto pWicCover = App->Player().GetCover();
-    if (!pWicCover)
-        pWicCover = App->GetImage(AppImage::DefaultCover);
-
     // -- 准备环境
 
     ComPtr<ID2D1Image> pOldTarget;
@@ -27,51 +21,56 @@ void CPagePlaying::UpdateBlurredCover()
 
     // -- 填充计算
 
-    UINT cx0, cy0;  // 原始大小
+    float cx0, cy0; // 原始大小
     float cyRgn;    // 截取区域高
     float cx, cy;   // 截取后图片大小
     D2D_POINT_2F pt;// 画出位置
 
-    pWicCover->GetSize(&cx0, &cy0);
-    cyRgn = cyEle / cxEle * (float)cx0;
+    const auto Cover = GetAtlas()->CoverGetCurrentImage();
+    const auto rcSrc = Cover.GetActualSourceRect();
+    cx0 = rcSrc.right - rcSrc.left;
+    cy0 = rcSrc.bottom - rcSrc.top;
+
+    cyRgn = cyEle / cxEle * cx0;
     if (cyRgn < cy0)// 1. 宽较大  cxClient / cxPic = cyClient / cyRgn
     {
         cx = cxEle;
         cy = cx * cy0 / cx0;
-        pt = { 0.f,(cyEle - cy) / 2 };
+        pt = { 0.f, (cyEle - cy) / 2 };
     }
     else// 2. 高较大  cyClient / cyPic = cxClient / cxRgn
     {
-        cy = (float)cyEle;
+        cy = cyEle;
         cx = cx0 * cy / cy0;
-        pt = { (cxEle - cx) / 2,0.f };
+        pt = { (cxEle - cx) / 2, 0.f };
     }
-
-    // -- 缩放
-
-    ComPtr<IWICBitmapScaler> pWicBitmapScaled;
-    eck::g_pWicFactory->CreateBitmapScaler(&pWicBitmapScaled);
-    pWicBitmapScaled->Initialize(
-        pWicCover.Get(),
-        (int)cx,
-        (int)cy,
-        WICBitmapInterpolationModeNearestNeighbor);
-
-    ComPtr<ID2D1Bitmap1> pBitmapCover{};
-    GetDC()->CreateBitmapFromWicBitmap(pWicBitmapScaled.Get(), pBitmapCover.AtClear());
-    m_Cover.SetBitmap(pBitmapCover.Get());
 
     // -- 模糊 
 
-    ComPtr<ID2D1Effect> pEffect;
-    GetDC()->CreateEffect(CLSID_D2D1GaussianBlur, &pEffect);
-    pEffect->SetInput(0, pBitmapCover.Get());
-    pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, 40.f);
-    pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
-    pEffect->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION,
+    // TODO 优化为一次裁剪
+    ComPtr<ID2D1Effect> pFxCrop0, pFxScale, pFxCrop1, pFxBlur;
+    GetDC()->CreateEffect(CLSID_D2D1Crop, &pFxCrop0);
+    pFxCrop0->SetInput(0, Cover.Get());
+    pFxCrop0->SetValue(D2D1_CROP_PROP_RECT, rcSrc);
+
+    GetDC()->CreateEffect(CLSID_D2D1Scale, &pFxScale);
+    pFxScale->SetInputEffect(0, pFxCrop0.Get());
+    pFxScale->SetValue(D2D1_SCALE_PROP_SCALE,
+        D2D1::Vector2F(cx / cx0, cy / cy0));
+
+    GetDC()->CreateEffect(CLSID_D2D1Crop, &pFxCrop1);
+    pFxCrop1->SetInputEffect(0, pFxScale.Get());
+    pFxCrop1->SetValue(D2D1_CROP_PROP_RECT,
+        D2D1::RectF(pt.x, pt.y, pt.x + cxEle, pt.y + cyEle));
+
+    GetDC()->CreateEffect(CLSID_D2D1GaussianBlur, &pFxBlur);
+    pFxBlur->SetInputEffect(0, pFxCrop1.Get());
+    pFxBlur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, 40.f);
+    pFxBlur->SetValue(D2D1_GAUSSIANBLUR_PROP_BORDER_MODE, D2D1_BORDER_MODE_HARD);
+    pFxBlur->SetValue(D2D1_GAUSSIANBLUR_PROP_OPTIMIZATION,
         D2D1_GAUSSIANBLUR_OPTIMIZATION_SPEED);
-    PixelToLogical(pt);
-    GetDC()->DrawImage(pEffect.Get(), pt);
+
+    GetDC()->DrawImage(pFxBlur.Get(), { 0.f, 0.f });
 
     // -- 半透明遮罩
 
@@ -93,8 +92,7 @@ void CPagePlaying::OnPlayEvent(const PLAY_EVT_PARAM& e)
     break;
     case PlayEvent::Play:
     {
-        UpdateBlurredCover();
-        Invalidate();
+        // 无需重画，UpdateBlurredCover调用后重画
         const auto& mi = App->Player().GetMusicSimpleData();
         m_LATitle.SetText(mi.rsTitle.Data());
         m_LAAlbum.SetText(mi.rsAlbum.Data());

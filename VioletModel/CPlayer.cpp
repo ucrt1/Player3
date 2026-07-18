@@ -43,28 +43,19 @@ PlayResult CPlayer::PlayWorker(int idx) noexcept
     Opt.uFlags = Tag::SMOF_MOVE;
     VltGetMusicInfo(e.rsFile.Data(), m_MusicInfo, Opt);
 
+    m_pBitmapCover.Clear();
     const auto pCover = m_MusicInfo.GetMainCover();
     if (pCover)
     {
-        m_bDefCover = FALSE;
         if (pCover->IsLink())
             m_dwLastHrOrBassErr = eck::WicLoadSource(
                 m_pBitmapCover.AtSelfClear(), pCover->GetPath().Data());
         else
         {
             const auto pStream = new eck::CStreamView{ pCover->GetData() };
-            m_dwLastHrOrBassErr = eck::WicLoadSource(m_pBitmapCover.AtSelfClear(), pStream);
+            m_dwLastHrOrBassErr = eck::WicLoadSource(m_pBitmapCover.AtSelf(), pStream);
             pStream->Release();
         }
-        if (FAILED(m_dwLastHrOrBassErr))
-            goto UseDefCover;
-    }
-    else
-    {
-    UseDefCover:
-        m_bDefCover = TRUE;
-        m_pBitmapCover = App->GetImage(AppImage::DefaultCover);
-        m_pBitmapCover->AddRef();
     }
 
     m_pLyric = RefPtr<Lyric::CLyric>::Make();
@@ -162,7 +153,7 @@ PlayResult CPlayer::Stop(BOOL bNoGap) noexcept
     m_idxCurrLrc = m_idxLastLrc = -1;
     if (!bNoGap)
     {
-        m_bDefCover = TRUE;
+        m_pBitmapCover.Clear();
         m_bActive = FALSE;
         m_EventChain.Emit({ PlayEvent::Stop });
         GetList()->PlySetCurrentItem(-1);

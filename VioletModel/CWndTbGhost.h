@@ -1,7 +1,6 @@
 ﻿#pragma once
 class CWindowGhost final : public eck::CWindow
 {
-    friend class CWindowMain;
 private:
     CWindowMain& m_WndMain;
     HBITMAP m_hbmLivePreviewCache{};// 实时预览位图缓存

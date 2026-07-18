@@ -12,4 +12,6 @@ private:
     void OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept;
 public:
     LRESULT OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
+
+    EckInlineNdCe auto& GetCoverElement() noexcept { return m_Cover; }
 };

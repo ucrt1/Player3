@@ -12,6 +12,7 @@
 #include "CWndTbGhost.h"
 #include "CVeVolumeBar.h"
 #include "CWndLrc.h"
+#include "CVioletAtlas.h"
 
 class CWindowMain final : public Dui::CDuiWindow, public eck::ITimeLine
 {
@@ -48,10 +49,6 @@ private:
 
     CVeVolumeBar m_VolBar{};
 
-    ID2D1Bitmap1* m_vBmpRealization[(size_t)AppImage::Max]{};
-
-    ID2D1Bitmap1* m_pBmpCover{};
-
     CPage* m_vPage[(size_t)Page::Max]
     {
         &m_PageMain,
@@ -81,6 +78,8 @@ private:
     ComPtr<ITaskbarList4> m_pTaskbarList{};
     CWindowGhost m_WndTbGhost{ *this };
 
+    RefPtr<CVioletAtlas> m_pAtlas{ RefPtr<CVioletAtlas>::Make() };
+
 #if VIOLET_WINRT
     WinMedia::SystemMediaTransportControls m_Smtc{ nullptr };
     WinMedia::SystemMediaTransportControlsTimelineProperties m_SmtcTimeline{};
@@ -91,8 +90,6 @@ private:
 
     int m_msProgTimer{};
 private:
-    void ClearRes() noexcept;
-
     BOOL OnCreate(HWND hWnd, CREATESTRUCT* pcs) noexcept;
 
     void PageShow(Page ePage, BOOL bAnimate) noexcept;
@@ -108,11 +105,7 @@ private:
 
     void LayoutPlayPanel() noexcept;
 
-    void OnCoverUpdate() noexcept;
-
     void OnColorSchemeChanged() noexcept;
-
-    void InvalidateRealizedImage() noexcept;
 
     HRESULT TblCreateGhostWindow(PCWSTR pszText) noexcept;
     HRESULT TblSetup() noexcept;
@@ -140,9 +133,6 @@ public:
     LRESULT OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept override;
 
     LRESULT OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) noexcept override;
-
-    ID2D1Bitmap1* RealizeImage(AppImage n) noexcept;
-    Dui::CBitmap RealizeImage2(AppImage n) noexcept;
 
     void TlTick(int iMs) noexcept override;
     BOOL TlIsValid() noexcept override { return m_bPPAnActive; }
