@@ -57,9 +57,6 @@
     <ClInclude Include="CBass.h">
       <Filter>逻辑</Filter>
     </ClInclude>
-    <ClInclude Include="CPage.h">
-      <Filter>UI\容器</Filter>
-    </ClInclude>
     <ClInclude Include="CPageEffect.h">
       <Filter>UI\容器</Filter>
     </ClInclude>
@@ -135,8 +132,8 @@
     <ClInclude Include="CVioletAtlas.h">
       <Filter>UI\其他</Filter>
     </ClInclude>
-    <ClInclude Include="CVioletElement.h">
-      <Filter>UI\其他</Filter>
+    <ClInclude Include="CVeBase.h">
+      <Filter>UI\元素</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -151,9 +148,6 @@
     </ClCompile>
     <ClCompile Include="CBass.cpp">
       <Filter>逻辑</Filter>
-    </ClCompile>
-    <ClCompile Include="CPage.cpp">
-      <Filter>UI\容器</Filter>
     </ClCompile>
     <ClCompile Include="CPageEffect.cpp">
       <Filter>UI\容器</Filter>

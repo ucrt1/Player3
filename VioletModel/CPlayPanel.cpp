@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
-#include "CWndMain.h"
+#include "CPlayPanel.h"
+#include "CApp.h"
 
 
 void CPlayPanel::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept

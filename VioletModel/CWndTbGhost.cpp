@@ -29,6 +29,7 @@ LRESULT CWindowGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcep
             bi.bmiHeader.biBitCount = 32;
             bi.bmiHeader.biCompression = BI_RGB;
             DWORD* pdwBits;
+            // TODO: 不使用DIB
             m_hbmLivePreviewCache = CreateDIBSection(nullptr,
                 &bi, DIB_RGB_COLORS, (void**)&pdwBits, nullptr, 0);
             *pdwBits = 0x01000000;// 透明度为0将显示为完全不透明
@@ -43,19 +44,19 @@ LRESULT CWindowGhost::OnMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcep
 
     case WM_ACTIVATE:
     {
-        m_WndMain.m_pTaskbarList->SetTabActive(Handle, m_WndMain.Handle, 0);
-        if (IsIconic(m_WndMain.Handle))
-            m_WndMain.Show(SW_RESTORE);
-        SetForegroundWindow(m_WndMain.Handle);
+        m_pTaskbarList->SetTabActive(Handle, m_pMainWindow->Handle, 0);
+        if (IsIconic(m_pMainWindow->Handle))
+            m_pMainWindow->Show(SW_RESTORE);
+        SetForegroundWindow(m_pMainWindow->Handle);
     }
     return 0;
 
     case WM_COMMAND:
     case WM_SYSCOMMAND:
-        return m_WndMain.SendMessageW(uMsg, wParam, lParam);
+        return m_pMainWindow->SendMessageW(uMsg, wParam, lParam);
 
     case WM_DESTROY:
-        m_WndMain.m_pTaskbarList->UnregisterTab(Handle);
+        m_pTaskbarList->UnregisterTab(Handle);
         InvalidateLivePreviewCache();
         InvalidateThumbnailCache();
         return 0;
@@ -86,10 +87,11 @@ HRESULT CWindowGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax) noexcept
     HRESULT hr;
     if (cxMax == UINT_MAX || cyMax == UINT_MAX)
     {
+        const auto iDpi = m_pMainWindow->GetWindowDpi();
         // 第一次调用最适尺寸未知，使用120作为默认值
         // 等到窗口第一次接收WM_DWMSENDICONICTHUMBNAIL时更新为正确的尺寸
-        cxMax = (m_cxPrev ? m_cxPrev : eck::DpiScale(120, m_WndMain.GetWindowDpi()));
-        cyMax = (m_cyPrev ? m_cyPrev : eck::DpiScale(120, m_WndMain.GetWindowDpi()));
+        cxMax = (m_cxPrev ? m_cxPrev : eck::DpiScale(120, iDpi));
+        cyMax = (m_cyPrev ? m_cyPrev : eck::DpiScale(120, iDpi));
     }
     m_cxPrev = cxMax;
     m_cyPrev = cyMax;
@@ -106,7 +108,7 @@ HRESULT CWindowGhost::SetIconicThumbnail(UINT cxMax, UINT cyMax) noexcept
 
     auto pCover = App->Player().GetCover();
     if (!pCover.Get())
-        pCover = App->GetImage(AppImage::DefaultCover);
+        pCover = m_pAtlas->CoverGetDefaultWicBitmap();
     UINT cx, cy, cx0, cy0;
     pCover->GetSize(&cx0, &cy0);
     if ((float)cxMax / (float)cyMax > (float)cx0 / (float)cy0)// y对齐

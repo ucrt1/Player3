@@ -100,7 +100,35 @@ HRESULT CVioletAtlas::AtlasRealize() noexcept
         m_pAtlasWic.Get(), m_pAtlasD2D.AtClear());
 }
 
-Dui::CBitmap CVioletAtlas::AtlasGetSubImage(AppImage eImg) const noexcept
+HRESULT CVioletAtlas::AtlasCropWicBitmap(
+    AppImage eImg,
+    Eck_Out_buffer_ ComPtr<IWICBitmapSource>& pBitmap) const noexcept
+{
+    HRESULT hr;
+    pBitmap.Clear();
+
+    ComPtr<IWICBitmapClipper> pClipper;
+    hr = eck::g_pWicFactory->CreateBitmapClipper(&pClipper);
+    if (FAILED(hr))
+        return hr;
+
+    const auto& rc = m_SubImage[(size_t)eImg - AtlasSubImageIndexBegin].rc;
+    const WICRect rcWic
+    {
+        rc.left,
+        rc.top,
+        rc.right - rc.left,
+        rc.bottom - rc.top
+    };
+    hr = pClipper->Initialize(m_pAtlasWic.Get(), &rcWic);
+    if (FAILED(hr))
+        return hr;
+
+    pBitmap = std::move(pClipper);
+    return S_OK;
+}
+
+Dui::CBitmap CVioletAtlas::AtlasGetD2D(AppImage eImg) const noexcept
 {
     Dui::CBitmap Bitmap{};
     const auto rc{ eck::MakeD2DRectF(m_SubImage[(size_t)eImg].rc) };

@@ -1,5 +1,7 @@
 ﻿#pragma once
-class CVeMiniCover : public Dui::CElement, public eck::ITimeLine
+#include "CVeBase.h"
+
+class CVeMiniCover : public CVeBase, public eck::ITimeLine
 {
 private:
     Dui::CBitmap m_BitmapCover{};

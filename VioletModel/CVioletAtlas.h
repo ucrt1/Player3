@@ -118,8 +118,12 @@ public:
 
     HRESULT AtlasInitialize() noexcept;
     HRESULT AtlasRealize() noexcept;
-    EckInlineNdCe auto& AtlasGetWicBitmap() const noexcept { return m_pAtlasWic; }
-    Dui::CBitmap AtlasGetSubImage(AppImage eImg) const noexcept;
+    EckInlineNdCe auto& AtlasGetOriginalWicBitmap() const noexcept
+    { return m_pAtlasWic; }
+    HRESULT AtlasCropWicBitmap(
+        AppImage eImg,
+        Eck_Out_buffer_ ComPtr<IWICBitmapSource>& pBitmap) const noexcept;
+    Dui::CBitmap AtlasGetD2D(AppImage eImg) const noexcept;
 
     HRESULT CoverInitialize() noexcept;
     HRESULT CoverRealize() noexcept;

@@ -1,8 +1,5 @@
 ﻿#pragma once
-#include "CVioletTheme.h"
-#include "CApp.h"
 #include "CVeDtLrc.h"
-
 
 class CWndLrc : public Dui::CDuiWindow, public eck::ITimeLine
 {

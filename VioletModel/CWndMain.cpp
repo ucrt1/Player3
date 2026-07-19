@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "CWndMain.h"
+#include "CApp.h"
 
 const static UINT MsgTaskbarButtonCreated{ RegisterWindowMessageW(L"TaskbarButtonCreated") };
 
@@ -231,7 +232,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
     case PlayEvent::Resume:
     {
         SetTimer(Handle, IDT_COMM_TICK, TE_COMM_TICK, nullptr);
-        m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Pause));
+        m_BTPlay.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Pause));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -247,7 +248,7 @@ void CWindowMain::OnPlayEvent(const PLAY_EVT_PARAM& e) noexcept
     case PlayEvent::Pause:
     {
         KillTimer(Handle, IDT_COMM_TICK);
-        m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Triangle));
+        m_BTPlay.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Triangle));
         m_BTPlay.Invalidate();
         TblUpdateState();
         SmtcUpdateState();
@@ -422,7 +423,7 @@ LRESULT CWindowMain::OnElementNotify(Dui::CElement* pEle, Dui::ELENMHDR* pnm) no
         else if (pEle == &m_BTAutoNext)
         {
             const auto r = App->Player().NextAutoNextMode();
-            m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetSubImage(AutoNextModeToGImg(r)));
+            m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetD2D(AutoNextModeToGImg(r)));
             m_BTAutoNext.Invalidate();
         }
         else if (pEle == &m_BTVol)
@@ -664,11 +665,11 @@ void CWindowMain::LayoutPlayPanel() noexcept
 
 void CWindowMain::OnColorSchemeChanged() noexcept
 {
-    m_BTPrev.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Previous));
-    m_BTPlay.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Triangle));
-    m_BTNext.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Next));
-    m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetSubImage(
+    m_BTPrev.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Previous));
+    m_BTPlay.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Triangle));
+    m_BTNext.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Next));
+    m_BTAutoNext.SetIcon(m_pAtlas->AtlasGetD2D(
         AutoNextModeToGImg(App->Player().GetAutoNextMode())));
-    m_BTLrc.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Lyric));
-    m_BTVol.SetIcon(m_pAtlas->AtlasGetSubImage(AppImage::Speaker));
+    m_BTLrc.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Lyric));
+    m_BTVol.SetIcon(m_pAtlas->AtlasGetD2D(AppImage::Speaker));
 }

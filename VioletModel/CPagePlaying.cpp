@@ -1,7 +1,6 @@
 ﻿#include "pch.h"
 #include "CPagePlaying.h"
 #include "CApp.h"
-#include "CWndMain.h"
 
 void CPagePlaying::UpdateBlurredCover()
 {

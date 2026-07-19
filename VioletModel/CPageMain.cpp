@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "CWndMain.h"
+#include "CPageMain.h"
 
 LRESULT CPageMain::OnEvent(UINT uMsg, WPARAM wParam, LPARAM lParam) noexcept
 {

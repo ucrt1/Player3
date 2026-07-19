@@ -1,5 +1,7 @@
 ﻿#pragma once
-class CPageList : public CPage, public Dui::CListView::IAdapter
+#include "CVeBase.h"
+
+class CPageList : public CVeBase, public Dui::CListView::IAdapter
 {
 private:
     using LvIndex = eck::UiBasic::Lc::Index;

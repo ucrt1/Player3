@@ -1,2 +1,2 @@
-#include "pch.h"
-#include "CWndMain.h"
+﻿#include "pch.h"
+#include "CPageEffect.h"

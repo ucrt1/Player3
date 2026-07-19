@@ -1,10 +1,12 @@
 ﻿#pragma once
-class CTabPanel : public Dui::CElement
+#include "CVeBase.h"
+
+class CTabPanel : public CVeBase
 {
 private:
 	ID2D1SolidColorBrush* m_pBrush{};
 	Dui::CLabel m_LAIcon{};
-	Dui::CTabList m_TAB{};
+	Dui::CListView m_TAB{};
 
 	void OnColorSchemeChanged();
 public:

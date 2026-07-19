@@ -1,5 +1,7 @@
 ﻿#pragma once
-class CVeVolumeBar : public Dui::CElement, public eck::ITimeLine
+#include "CVeBase.h"
+
+class CVeVolumeBar : public CVeBase, public eck::ITimeLine
 {
 private:
     Dui::CLabel m_LAVol{};

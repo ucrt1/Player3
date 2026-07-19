@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "CVeMiniCover.h"
 
-class CPlayPanel :public Dui::CElement
+class CPlayPanel : public CVeBase
 {
 private:
     CVeMiniCover m_Cover{};

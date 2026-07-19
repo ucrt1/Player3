@@ -1,5 +1,7 @@
 ﻿#pragma once
-class CVeCover : public Dui::CElement
+#include "CVeBase.h"
+
+class CVeCover : public CVeBase
 {
 private:
 	ID2D1Bitmap1* m_pBmp{};

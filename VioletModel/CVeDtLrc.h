@@ -1,10 +1,12 @@
 ﻿#pragma once
+#include "CVeBase.h"
+
 struct NM_DTL_GET_TIME : Dui::ELENMHDR
 {
     float fTime;
 };
 
-class CVeDtLrc : public Dui::CElement, public eck::ITimeLine
+class CVeDtLrc : public CVeBase, public eck::ITimeLine
 {
 public:
     constexpr static int c_InvalidCacheIdx = std::numeric_limits<int>::min();

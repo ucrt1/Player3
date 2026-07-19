@@ -1,10 +1,9 @@
 ﻿#pragma once
 #include "CVeCover.h"
 #include "CVeLrc.h"
-#include "CVioletAtlas.h"
-#include "CVioletElement.h"
+#include "CVeBase.h"
 
-class CPagePlaying : public CVioletElement
+class CPagePlaying : public CVeBase
 {
 private:
     CVeCover m_Cover{};

@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
-#include "CWndMain.h"
+#include "CPageList.h"
 #include "Utils.h"
+#include "CApp.h"
 
 constexpr std::wstring_view ColumnName[]
 {
@@ -478,7 +479,7 @@ void CPageList::InitializeUi() noexcept
         m_BTAddFile.Create(L"添加文件", Dui::DES_VISIBLE, 0,
             0, 0, CxListPageButton, CyStdEdit, this);
         m_BTAddFile.SetTextFormat(pTextFormat.Get());
-        m_BTAddFile.SetIcon(GetAtlas()->AtlasGetSubImage(AppImage::Plus));
+        m_BTAddFile.SetIcon(GetAtlas()->AtlasGetD2D(AppImage::Plus));
         m_LytTopBar.LobAddObject(
             {
                 .pObject = &m_BTAddFile,
@@ -488,7 +489,7 @@ void CPageList::InitializeUi() noexcept
         m_BTLocate.Create(L"定位当前", Dui::DES_VISIBLE, 0,
             0, 0, CxListPageButton, CyStdEdit, this);
         m_BTLocate.SetTextFormat(pTextFormat.Get());
-        m_BTLocate.SetIcon(GetAtlas()->AtlasGetSubImage(AppImage::Locate));
+        m_BTLocate.SetIcon(GetAtlas()->AtlasGetD2D(AppImage::Locate));
         m_LytTopBar.LobAddObject(
             {
                 .pObject = &m_BTLocate,

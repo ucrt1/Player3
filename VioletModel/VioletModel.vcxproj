@@ -208,11 +208,10 @@
     <ClInclude Include="CPlayListMgr.h" />
     <ClInclude Include="CVeDtLrc.h" />
     <ClInclude Include="CVeVolumeBar.h" />
-    <ClInclude Include="CVioletElement.h" />
+    <ClInclude Include="CVeBase.h" />
     <ClInclude Include="CWndLrc.h" />
     <ClInclude Include="CWndTbGhost.h" />
     <ClInclude Include="CVeMiniCover.h" />
-    <ClInclude Include="CPage.h" />
     <ClInclude Include="CPageEffect.h" />
     <ClInclude Include="CPageList.h" />
     <ClInclude Include="CPageMain.h" />
@@ -244,7 +243,6 @@
     <ClCompile Include="CWndMain_Shell.cpp" />
     <ClCompile Include="CWndTbGhost.cpp" />
     <ClCompile Include="CVeMiniCover.cpp" />
-    <ClCompile Include="CPage.cpp" />
     <ClCompile Include="CPageEffect.cpp" />
     <ClCompile Include="CPageList.cpp" />
     <ClCompile Include="CPageMain.cpp" />

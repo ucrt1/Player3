@@ -1,7 +1,8 @@
 ﻿#pragma once
+#include "CVeBase.h"
 #include "CLyricRendererBase.h"
 
-class CVeLyric : public Dui::CElement, public eck::ITimeLine
+class CVeLyric : public CVeBase, public eck::ITimeLine
 {
     // Mi = Mouse Idle
     // Itm = Item
@@ -169,12 +170,4 @@ public:
 
     EckInlineNdCe auto& TmSimpleStyle(UINT ss) const noexcept { return m_Style[ss]; }
     EckInlineNdCe auto& TmSimpleStyle(UINT ss) noexcept { return m_Style[ss]; }
-};
-
-class CThemeLyric : public Dui::CThemeBase
-{
-private:
-
-public:
-
 };

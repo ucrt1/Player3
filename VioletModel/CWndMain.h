@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include "CApp.h"
-#include "CPage.h"
 #include "CPageMain.h"
 #include "CPageList.h"
 #include "CPageEffect.h"
@@ -49,7 +47,7 @@ private:
 
     CVeVolumeBar m_VolBar{};
 
-    CPage* m_vPage[(size_t)Page::Max]
+    CVeBase* m_vPage[(size_t)Page::Max]
     {
         &m_PageMain,
         &m_PageList,
@@ -57,7 +55,7 @@ private:
         &m_PageOptions
     };
 
-    CPage* m_pAnPage{};
+    CVeBase* m_pAnPage{};
     eck::EasingCurve<eck::Easing::FOutCubic> m_ecPage{};
 
     BOOLEAN m_bPageAnUpToDown{};
@@ -76,7 +74,7 @@ private:
 
     HICON m_hiTbPlay{}, m_hiTbPause{};
     ComPtr<ITaskbarList4> m_pTaskbarList{};
-    CWindowGhost m_WndTbGhost{ *this };
+    CWindowGhost m_WndTbGhost{};
 
     RefPtr<CVioletAtlas> m_pAtlas{ RefPtr<CVioletAtlas>::Make() };
 
@@ -115,6 +113,9 @@ private:
     HRESULT TblUpdateState() noexcept;
     HRESULT TblUpdateProgress() noexcept;
     HRESULT TblOnTaskbarButtonCreated() noexcept;
+    HRESULT TblScaleButtonImage(
+        AppImage eImg,
+        ComPtr<IWICBitmapSource>& pSource) noexcept;
 
     HRESULT SmtcInitialize() noexcept;
 #if VIOLET_WINRT

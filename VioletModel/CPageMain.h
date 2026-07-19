@@ -1,5 +1,7 @@
-#pragma once
-class CPageMain : public CPage
+﻿#pragma once
+#include "CVeBase.h"
+
+class CPageMain : public CVeBase
 {
 private:
 	Dui::CButton m_BTOpenFile{};

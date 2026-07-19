@@ -1,4 +1,6 @@
-#pragma once
-class CPageEffect : public CPage
+﻿#pragma once
+#include "CVeBase.h"
+
+class CPageEffect : public CVeBase
 {
 };
