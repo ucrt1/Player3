@@ -15,7 +15,6 @@ private:
 
         PLDATA s{};
         int idxSortMapping{ -1 };   // 【排序时用】映射到的项
-        int idxImage{ 0 };          // 图像列表索引，供UI使用
     };
 
     eck::CStringW m_rsListFile{};	// 对应列表文件路径
@@ -51,8 +50,6 @@ public:
 
     // 从文件初始化列表内容，此函数不修改当前列表文件路径和名称
     HRESULT LtmInitializeFromListFile(PCWSTR pszFile) noexcept;
-
-    void LtmInvalidateImage() noexcept;
 
     EckInlineNdCe Item& FlAtAbsolutely(int idx) noexcept { return m_vFlat[idx]; }
     EckInlineNdCe Item& FlAt(int idx) noexcept

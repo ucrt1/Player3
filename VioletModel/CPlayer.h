@@ -33,10 +33,10 @@ enum class AutoNextMode : BYTE
     Minimum,
 
     ListLoop,   // 列表循环
-    List,		// 列表播放
-    Random,		// 随机播放
-    SingleLoop,	// 单曲循环
-    Single,		// 单曲播放
+    List,       // 列表播放
+    Random,     // 随机播放
+    SingleLoop, // 单曲循环
+    Single,     // 单曲播放
 
     Maximum,
 };

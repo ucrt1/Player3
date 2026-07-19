@@ -28,15 +28,6 @@ HRESULT CPlayList::LtmInitializeFromListFile(PCWSTR pszFile) noexcept
 	return S_OK;
 }
 
-void CPlayList::LtmInvalidateImage() noexcept
-{
-	for (auto& e : m_vFlat)
-	{
-		e.idxImage = 0;
-		e.s.bCoverUpdated = FALSE;
-	}
-}
-
 int CPlayList::FlInsert(const eck::CStringW& rsFile, int idx) noexcept
 {
 	idx = FlInsertEmpty(idx);
@@ -90,7 +81,7 @@ void CPlayList::FlShuffleRandom() noexcept
 
 BOOL CPlayList::PlyIsSelected() noexcept
 {
-	return App->Player().GetList() == this;
+	return App->Player().GetList().Get() == this;
 }
 
 void CPlayList::PlySetCurrentRandomItemFromFlat(int idxFlat) noexcept

@@ -111,7 +111,7 @@ private:
     // | Default Cover | Gap | Current Cover |
     // +---------------+-----+---------------+
     ComPtr<ID2D1Bitmap1> m_pCoverD2D{};
-    ComPtr<IWICBitmapSource> m_pCoverWic{};// 大小为 CoverWidth * MaximumCoverHeight
+    ComPtr<IWICBitmapSource> m_pDefaultCoverWic{};// 大小为 CoverWidth * CoverHeight
     BOOL m_bDefaultCover{ TRUE };// 当前是否使用默认封面
 public:
     HRESULT PrepareRealization(ID2D1DeviceContext* pDC) noexcept;
@@ -128,6 +128,7 @@ public:
     Dui::CBitmap CoverGetSubImage(AppImage eImg) noexcept;
     HRESULT CoverUpdate(IWICBitmapSource* pBitmap) noexcept;
     EckInlineNdCe BOOL CoverIsDefault() const noexcept { return m_bDefaultCover; }
+    EckInlineNdCe auto& CoverGetDefaultWicBitmap() const noexcept { return m_pDefaultCoverWic; }
 
     HRESULT SingleInitialize() noexcept;
     Dui::CBitmap SingleGetImage(AppImage eImg) noexcept;

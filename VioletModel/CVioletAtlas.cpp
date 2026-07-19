@@ -79,15 +79,16 @@ HRESULT CVioletAtlas::AtlasInitialize() noexcept
     if (!ValFrame.IsValid())
         return HRESULT_FROM_WIN32(ERROR_BAD_FORMAT);
 
-    EckCounter((size_t)AppImage::Detail_AtlasMaximum, i)
+    EckCounter(AtlasSubImageCount, i)
     {
-        const auto ValRect = ValFrame[AtlasSubImageFile[i]]["/frame"];
+        const auto idx = i - AtlasSubImageIndexBegin;
+        const auto ValRect = ValFrame[AtlasSubImageFile[idx]]["/frame"];
         const auto x = ValRect["/x"].GetInt();
         const auto y = ValRect["/y"].GetInt();
         const auto cx = ValRect["/cx"].GetInt();
         const auto cy = ValRect["/cy"].GetInt();
 
-        m_SubImage[i].rc = { x, y, x + cx, y + cy };
+        m_SubImage[idx].rc = { x, y, x + cx, y + cy };
     }
 
     return S_OK;
@@ -130,7 +131,7 @@ HRESULT CVioletAtlas::CoverInitialize() noexcept
     if (FAILED(hr))
         return hr;
 
-    m_pCoverWic = std::move(pScaler);
+    m_pDefaultCoverWic = std::move(pScaler);
     return S_OK;
 }
 
@@ -152,7 +153,7 @@ HRESULT CVioletAtlas::CoverRealize() noexcept
         (BYTE*)eck::VAllocate((CoverWidth + CoverAtlasGap) * CoverHeight * sizeof(UINT)) };
 
     constexpr WICRect rc{ 0, 0, CoverWidth, CoverHeight };
-    hr = m_pCoverWic->CopyPixels(&rc,
+    hr = m_pDefaultCoverWic->CopyPixels(&rc,
         (CoverWidth + CoverAtlasGap) * sizeof(UINT),
         CoverWidth * CoverHeight * sizeof(UINT),
         pBuffer.get());
@@ -200,7 +201,7 @@ HRESULT CVioletAtlas::CoverUpdate(IWICBitmapSource* pBitmap) noexcept
     (BYTE*)eck::VAllocate(CoverWidth * CoverHeight * sizeof(UINT)) };
 
     constexpr WICRect rc{ 0, 0, CoverWidth, CoverHeight };
-    const auto hr = m_pCoverWic->CopyPixels(&rc,
+    const auto hr = pBitmap->CopyPixels(&rc,
         CoverWidth * sizeof(UINT),
         CoverWidth * CoverHeight * sizeof(UINT),
         pBuffer.get());

@@ -89,7 +89,6 @@ struct PLDATA// 结构稳定，不能修改
 	BYTE bBookmark : 1{};	// 项目含书签
 	BYTE bMarked : 1{};		// 项目已标记
 	BYTE bUpdated : 1{};	// 信息已更新
-	BYTE bCoverUpdated : 1{};	// 封面已更新
 };
 
 enum class PlType : UINT
